@@ -8,7 +8,12 @@ services:
     container_name: aegis
     ports:
       - "8000:8080"
-    command: ["--upstream-url=http://resource-server:80"]
+    command: [] # Command is empty because we use environment variables
+    environment:
+      - UPSTREAM_URL=http://resource-server:80
+      - DISCOVERY_URL=https://dummy.idp.com/.well-known/openid-configuration
+      - CLIENT_ID=dummy-client
+      - CLIENT_SECRET=dummy-secret
     depends_on:
       - resource-server
     restart: unless-stopped
