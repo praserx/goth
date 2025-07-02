@@ -101,6 +101,11 @@ func Info(message string) {
 	GetLogger().Info(message)
 }
 
+// InfoF logs an informational message with key-value pairs.
+func Infof(format string, values ...interface{}) {
+	Info(fmt.Sprintf(format, values...))
+}
+
 // Infov logs an informational message with verbosity and key-value pairs.
 // The verbosity level determines when the message is logged.
 func Infov(message string, v int, keysAndValues ...interface{}) {
@@ -111,6 +116,10 @@ func Infov(message string, v int, keysAndValues ...interface{}) {
 // Warning messages are always logged, regardless of the verbosity level.
 func Warning(message string) {
 	GetLogger().Warning(message)
+}
+
+func Warningf(format string, values ...interface{}) {
+	Warning(fmt.Sprintf(format, values...))
 }
 
 // Warningv logs a warning message with key-value pairs.
@@ -126,10 +135,22 @@ func Error(message string, errs ...error) {
 	GetLogger().Error(message, errs...)
 }
 
+func Errorf(format string, values ...interface{}) {
+	// Format the error message and pass it to the Error function.
+	// This allows for structured error messages with formatting.
+	GetLogger().Error(fmt.Sprintf(format, values...))
+}
+
 // Fatal logs a fatal error message and exits the program.
 // Fatal messages indicate serious errors that cause premature termination.
 func Fatal(message string) {
 	GetLogger().Fatal(message)
+}
+
+func Fatalf(format string, values ...interface{}) {
+	// Format the fatal error message and pass it to the Fatal function.
+	// This allows for structured fatal messages with formatting.
+	GetLogger().Fatal(fmt.Sprintf(format, values...))
 }
 
 // Info logs a standard, non-verbose informational message.
