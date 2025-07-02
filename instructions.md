@@ -1,0 +1,1 @@
+I have go http proxy server (http.Server or http.ServeMux) to authorize all requests to the resource. There will also be set of middlewares to eg. log access (access log), check current session and many more. Create skeleton of this functionality with all comments. All files should be in pkg folder. And remember, you are senior golang developer.

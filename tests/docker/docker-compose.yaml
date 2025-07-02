@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  aegis:
+    build:
+      context: ../..  # The context is the root of the project
+      dockerfile: docker/Dockerfile
+    container_name: aegis
+    ports:
+      - "8000:8080"
+    command: ["--upstream-url=http://resource-server:80"]
+    depends_on:
+      - resource-server
+    restart: unless-stopped
+
+  resource-server:
+    build:
+      context: ./resource-server
+      dockerfile: Dockerfile
+    container_name: resource-server
+    ports:
+      - "8081:80" # Changed to 8081 to avoid conflict
+    restart: unless-stopped
