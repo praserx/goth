@@ -1,10 +1,13 @@
 package aegis
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/praserx/aegis/pkg/middleware"
+	"github.com/praserx/aegis/pkg/session"
+	"github.com/praserx/aegis/pkg/storage"
 )
 
 // Proxy is the main struct for the HTTP authorization proxy server.
@@ -14,15 +17,30 @@ type Proxy struct {
 }
 
 // New creates a new Proxy instance with all required middlewares and handlers.
-func New(options ...func(*Options)) *Proxy {
+// It returns an error if initialization fails.
+func New(options ...func(*Options)) (*Proxy, error) {
 	opts := &Options{
-		Verbosity:    0, // Default verbosity level
-		Oauth2Config: nil,
-		UpstreamURL:  nil,
+		Verbosity:      0, // Default verbosity level
+		Oauth2Config:   nil,
+		UpstreamURL:    nil,
+		SessionManager: nil, // Default session manager
 	}
 
 	for _, opt := range options {
 		opt(opts)
+	}
+
+	// If no session manager is provided, create a default in-memory one.
+	if opts.SessionManager == nil {
+		store, err := storage.NewInMemoryStore()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create default in-memory store: %w", err)
+		}
+		sessionManager, err := session.NewManager(session.WithStorage(store))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create default session manager: %w", err)
+		}
+		opts.SessionManager = sessionManager
 	}
 
 	mux := http.NewServeMux()
@@ -31,11 +49,12 @@ func New(options ...func(*Options)) *Proxy {
 	mux.Handle("/", chainMiddlewares(
 		middleware.Proxy(opts.UpstreamURL)(http.NotFoundHandler()), // Main proxy handler
 		middleware.AuthorizationMiddleware(),
-		middleware.SessionMiddleware(),
+		middleware.SessionMiddleware(opts.SessionManager),
 		middleware.AccessLogMiddleware(),
 	))
 
-	return &Proxy{Mux: mux, Upstream: opts.UpstreamURL}
+	proxy := &Proxy{Mux: mux, Upstream: opts.UpstreamURL}
+	return proxy, nil
 }
 
 // ServeHTTP implements http.Handler for Proxy.
