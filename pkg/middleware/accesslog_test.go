@@ -40,14 +40,12 @@ func TestAccessLogMiddleware(t *testing.T) {
 	t.Cleanup(logger.ResetForTesting)
 
 	var buf bytes.Buffer
-	logger.SetLogger(logger.New(logger.WithWriter(&buf), logger.WithVerbosity(1)))
+	logger.Setup(logger.WithWriter(&buf), logger.WithVerbosity(1))
 
-	// Create a simple handler to be wrapped by the middleware.
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 	})
 
-	// Create the middleware and wrap the handler.
 	middleware := AccessLogMiddleware()
 	wrappedHandler := middleware(handler)
 
