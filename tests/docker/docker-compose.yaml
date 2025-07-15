@@ -17,6 +17,7 @@ services:
       - CLIENT_ID=admin-cli # Must match TARGET_CLIENT_ID
       - CLIENT_SECRET= # This is now set by the entrypoint script
       - TLS_SKIP_VERIFY=true
+      - REDIS_URL=redis:6379 # Address for the Redis service
 
       # --- Entrypoint Script Configuration ---
       - KEYCLOAK_URL=http://keycloak:8080 # Use the internal port for container-to-container communication
@@ -27,7 +28,10 @@ services:
     depends_on:
       - resource-server
       - keycloak
+      - redis
     restart: unless-stopped
+    networks:
+      - aegis-net
 
   resource-server:
     build:
@@ -37,6 +41,8 @@ services:
     ports:
       - "8888:80" # Changed to 8081 to avoid conflict
     restart: unless-stopped
+    networks:
+      - aegis-net
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
@@ -51,3 +57,16 @@ services:
       - "18080:8080" # Expose Keycloak on port 9090
       - "19000:9000" # Expose the health check on port 9099
     restart: unless-stopped
+    networks:
+      - aegis-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - aegis-net
+
+networks:
+  aegis-net:
