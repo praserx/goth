@@ -22,6 +22,7 @@ export PATH := $(GOBIN):$(PATH)
 BIN_DIR := ./bin
 CMD_DIR := ./cmd
 PKG_DIR := ./pkg
+TEST_DIR := ./tests
 
 # Application name
 APP_NAME := aegis
@@ -67,16 +68,21 @@ lint:
 	@$(GOLINT) run ./...
 
 # Test: runs unit tests for all packages.
+# For verbose output, run `make test V=1`
 .PHONY: test
 test:
 	@echo "Running unit tests..."
-	@$(GOTEST) -v ./...
+	@if [ "$(V)" = "1" ]; then \
+		$(GOTEST) -v ./...; \
+	else \
+		$(GOTEST) ./...; \
+	fi
 
 # E2E Test: brings up the docker-compose environment for testing.
 .PHONY: test-e2e
 test-e2e: build
 	@echo "Starting end-to-end test environment..."
-	@sudo docker-compose -f tests/docker/docker-compose.yaml up --build -d
+	@sudo docker-compose -f tests/docker/docker-compose.yaml up --build --force-recreate -d
 
 # E2E Test Down: stops the docker-compose environment.
 .PHONY: test-e2e-down
@@ -95,6 +101,7 @@ test-e2e-logs:
 build:
 	@echo "Building the application with static linking..."
 	CGO_ENABLED=0 $(GOBUILD) -ldflags '-extldflags "-static"' -o $(BIN_DIR)/$(APP_NAME) $(CMD_DIR)/...
+	CGO_ENABLED=0 $(GOBUILD) -ldflags '-extldflags "-static"' -o $(TEST_DIR)/docker/aegis/bin/$(APP_NAME) $(CMD_DIR)/...
 
 # Clean: cleans up build artifacts.
 .PHONY: clean
