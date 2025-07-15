@@ -3,19 +3,30 @@ version: '3.8'
 services:
   aegis:
     build:
-      context: ../..  # The context is the root of the project
-      dockerfile: docker/Dockerfile
+      context: ./aegis # The context is the root of the project
+      dockerfile: Dockerfile # Use the new Dockerfile with entrypoint
     container_name: aegis
     ports:
       - "8000:8080"
-    command: [] # Command is empty because we use environment variables
+    command: [] # Command is executed by the entrypoint script
     environment:
+      # --- Aegis Application Configuration ---
       - UPSTREAM_URL=http://resource-server:80
-      - DISCOVERY_URL=https://dummy.idp.com/.well-known/openid-configuration
-      - CLIENT_ID=dummy-client
-      - CLIENT_SECRET=dummy-secret
+      - DISCOVERY_URL=http://keycloak:8080/realms/test/.well-known/openid-configuration # Use internal port 8080
+      - HEALTH_CHECK_URL=http://keycloak:9000/health # Health check URL for Keycloak
+      - CLIENT_ID=admin-cli # Must match TARGET_CLIENT_ID
+      - CLIENT_SECRET= # This is now set by the entrypoint script
+      - TLS_SKIP_VERIFY=true
+
+      # --- Entrypoint Script Configuration ---
+      - KEYCLOAK_URL=http://keycloak:8080 # Use the internal port for container-to-container communication
+      - KEYCLOAK_ADMIN_USER=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KEYCLOAK_REALM=test # The realm to use
+      - TARGET_CLIENT_ID=application # Client whose secret will be fetched
     depends_on:
       - resource-server
+      - keycloak
     restart: unless-stopped
 
   resource-server:
@@ -24,5 +35,19 @@ services:
       dockerfile: Dockerfile
     container_name: resource-server
     ports:
-      - "8081:80" # Changed to 8081 to avoid conflict
+      - "8888:80" # Changed to 8081 to avoid conflict
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    command: ["start-dev", "--health-enabled=true", "--import-realm", "--features=scripts"]
+    volumes:
+      - ./keycloak-config:/opt/keycloak/data/import # For realm import
+    ports:
+      - "18080:8080" # Expose Keycloak on port 9090
+      - "19000:9000" # Expose the health check on port 9099
     restart: unless-stopped
