@@ -14,6 +14,8 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/praserx/aegis/pkg/aegis"
 	"github.com/praserx/aegis/pkg/logger"
+	"github.com/praserx/aegis/pkg/session"
+	"github.com/praserx/aegis/pkg/storage"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/oauth2"
 )
@@ -24,48 +26,78 @@ func main() {
 		Usage: "A lightweight, security-focused authorization proxy",
 		Flags: []cli.Flag{
 			flagVerbose,
-			flagListenHTTP,
-			flagListenHTTPS,
-			flagTLSCert,
-			flagTLSKey,
-			flagTLSSkipVerify,
-			flagDiscoveryURL,
-			flagClientID,
-			flagClientSecret,
-			flagUpstreamURL,
-			flagPolicyMode,
+			flagWebListenHTTP,
+			flagWebListenHTTPS,
+			flagWebTLSCert,
+			flagWebTLSKey,
+			flagWebSessionName,
+			flagOIDCTLSSkipVerify,
+			flagOIDCDiscoveryURL,
+			flagOIDCClientID,
+			flagOIDCClientSecret,
+			flagProxyUpstreamURL,
+			flagStorageRedisEnabled,
+			flagStorageRedisURL,
+			flagAuthPolicyMode,
 		},
 		UseShortOptionHandling: true,
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			logger.Info("Starting Aegis proxy...")
 
-			upstreamURL, err := url.Parse(cmd.String("upstream-url"))
+			upstreamURL, err := url.Parse(cmd.String("proxy.upstream-url"))
 			if err != nil {
 				return fmt.Errorf("invalid upstream URL: %w", err)
 			}
 
-			// provider, err := oidc.NewProvider(ctx, cmd.String("discovery-url"))
-			// if err != nil {
-			// 	return fmt.Errorf("failed to create OIDC provider: %w", err)
-			// }
+			// Initialize storage based on configuration
+			var store storage.Storage
+			if cmd.Bool("storage.redis.enabled") {
+				store, err = storage.NewRedisStore(ctx, cmd.String("storage.redis.url"))
+				if err != nil {
+					return fmt.Errorf("failed to create redis store: %w", err)
+				}
+				logger.Info("Using Redis for session storage")
+			} else {
+				store, err = storage.NewInMemoryStore()
+				if err != nil {
+					return fmt.Errorf("failed to create in-memory store: %w", err)
+				}
+				logger.Info("Using in-memory for session storage")
+			}
+			defer store.Close()
 
-			oauth2Config := &oauth2.Config{
-				ClientID:     cmd.String("client-id"),
-				ClientSecret: cmd.String("client-secret"),
-				// Endpoint:     provider.Endpoint(),
-				Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
+			sessionManager, err := session.NewManager(session.WithStorage(store))
+			if err != nil {
+				return fmt.Errorf("failed to create session manager: %w", err)
 			}
 
-			proxy := aegis.New(
+			provider, err := oidc.NewProvider(ctx, cmd.String("oidc.discovery-url"))
+			if err != nil {
+				return fmt.Errorf("failed to create OIDC provider: %w", err)
+			}
+
+			oauth2Config := &oauth2.Config{
+				ClientID:     cmd.String("oidc.client-id"),
+				ClientSecret: cmd.String("oidc.client-secret"),
+				Endpoint:     provider.Endpoint(),
+				Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+			}
+
+			proxy, err := aegis.New(
 				aegis.WithVerbosity(verbosityLevel),
 				aegis.WithUpstreamURL(upstreamURL),
 				aegis.WithOauth2Config(oauth2Config),
+				aegis.WithSessionManager(sessionManager),
+				aegis.WithSessionKey(cmd.String("web.session-name")),
 			)
+			if err != nil {
+				return fmt.Errorf("failed to create aegis proxy: %w", err)
+			}
 
-			listenHTTP := cmd.String("listen-http")
-			listenHTTPS := cmd.String("listen-https")
-			tlsCert := cmd.String("tls-cert")
-			tlsKey := cmd.String("tls-key")
+			listenHTTP := cmd.String("web.listen-http")
+			listenHTTPS := cmd.String("web.listen-https")
+			tlsCert := cmd.String("web.tls-cert")
+			tlsKey := cmd.String("web.tls-key")
 
 			errChan := make(chan error, 2)
 			httpServer := &http.Server{
