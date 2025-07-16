@@ -20,14 +20,26 @@ type Proxy struct {
 // It returns an error if initialization fails.
 func New(options ...func(*Options)) (*Proxy, error) {
 	opts := &Options{
-		Verbosity:      0, // Default verbosity level
-		Oauth2Config:   nil,
+		Provider:       nil,
 		UpstreamURL:    nil,
-		SessionManager: nil, // Default session manager
+		SessionManager: nil,
+		CookieOptions: session.CookieOptions{
+			Name:     "proxy-session",                          // Default session name
+			MaxAge:   int(session.DefaultSessionTTL.Seconds()), // Session cookie expiration time in seconds
+			Secure:   true,                                     // Set to true if using HTTPS
+			HttpOnly: true,                                     // Prevents JavaScript access to the cookie
+		},
 	}
 
 	for _, opt := range options {
 		opt(opts)
+	}
+
+	if opts.Provider == nil {
+		return nil, fmt.Errorf("provider is required")
+	}
+	if opts.UpstreamURL == nil {
+		return nil, fmt.Errorf("upstream URL is required")
 	}
 
 	// If no session manager is provided, create a default in-memory one.
@@ -45,16 +57,22 @@ func New(options ...func(*Options)) (*Proxy, error) {
 
 	mux := http.NewServeMux()
 
+	// Authentication routes
+	// authHandler := handler.NewAuthHandler(opts.Provider, opts.SessionManager, opts.CookieOptions.Name)
+	// mux.Handle("/auth/callback", authHandler.Callback())
+	// mux.Handle("/auth/logout", authHandler.Logout())
+
 	// Register the main handler with middleware chain
 	mux.Handle("/", chainMiddlewares(
-		middleware.Proxy(opts.UpstreamURL)(http.NotFoundHandler()), // Main proxy handler
-		middleware.AuthorizationMiddleware(),
-		middleware.SessionMiddleware(opts.SessionManager),
 		middleware.AccessLogMiddleware(),
-	))
+		middleware.SessionMiddleware(opts.SessionManager, opts.CookieOptions),
+		middleware.Proxy(opts.UpstreamURL),
+	)(http.NotFoundHandler()))
 
-	proxy := &Proxy{Mux: mux, Upstream: opts.UpstreamURL}
-	return proxy, nil
+	return &Proxy{
+		Mux:      mux,
+		Upstream: opts.UpstreamURL,
+	}, nil
 }
 
 // ServeHTTP implements http.Handler for Proxy.
@@ -62,10 +80,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p.Mux.ServeHTTP(w, r)
 }
 
-// chainMiddlewares chains multiple middlewares around a handler.
-func chainMiddlewares(h http.Handler, mws ...middleware.Middleware) http.Handler {
-	for i := len(mws) - 1; i >= 0; i-- {
-		h = mws[i](h)
+// chainMiddlewares applies a series of middlewares to an http.Handler.
+// Middlewares are applied in the order they are provided.
+func chainMiddlewares(middlewares ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return func(final http.Handler) http.Handler {
+		for i := len(middlewares) - 1; i >= 0; i-- {
+			final = middlewares[i](final)
+		}
+		return final
 	}
-	return h
 }
