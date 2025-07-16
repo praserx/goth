@@ -2,11 +2,14 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/praserx/aegis/pkg/storage/inmemory"
 	"github.com/praserx/aegis/pkg/storage/redis"
 )
+
+var ErrNotFound = errors.New("key not found")
 
 // Storage defines the interface for a key-value store.
 // This can be implemented by various backends like Redis or in-memory maps.
