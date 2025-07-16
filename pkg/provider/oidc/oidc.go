@@ -2,9 +2,11 @@ package oidc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/praserx/aegis/pkg/provider"
 	"golang.org/x/oauth2"
 )
 
@@ -19,6 +21,7 @@ var (
 type Provider struct {
 	provider    *oidc.Provider
 	oauthConfig oauth2.Config
+	claimsMap   provider.ClaimsMap
 }
 
 // ProviderOptions holds the configuration options for creating an OIDC provider.
@@ -28,12 +31,18 @@ type ProviderOptions struct {
 	ClientSecret string
 	RedirectURL  string
 	Scopes       []string
+	ClaimsMap    provider.ClaimsMap
 }
 
 // NewProvider creates a new OIDC provider instance with the given options.
-func NewProvider(ctx context.Context, options ...func(*ProviderOptions)) (*Provider, error) {
+func NewProvider(ctx context.Context, options ...func(*ProviderOptions)) (provider.Provider, error) {
 	opts := &ProviderOptions{
 		Scopes: []string{oidc.ScopeOpenID, "profile", "email"}, // Default scopes
+		ClaimsMap: provider.ClaimsMap{ // Default claims map
+			ID:    "sub",
+			Email: "email",
+			Name:  "name",
+		},
 	}
 
 	for _, opt := range options {
@@ -53,20 +62,21 @@ func NewProvider(ctx context.Context, options ...func(*ProviderOptions)) (*Provi
 		return nil, ErrMissingRedirectURL
 	}
 
-	provider, err := oidc.NewProvider(ctx, opts.Issuer)
+	oidcProvider, err := oidc.NewProvider(ctx, opts.Issuer)
 	if err != nil {
 		return nil, err
 	}
 
 	p := &Provider{
-		provider: provider,
+		provider: oidcProvider,
 		oauthConfig: oauth2.Config{
 			ClientID:     opts.ClientID,
 			ClientSecret: opts.ClientSecret,
 			RedirectURL:  opts.RedirectURL,
-			Endpoint:     provider.Endpoint(),
+			Endpoint:     oidcProvider.Endpoint(),
 			Scopes:       opts.Scopes,
 		},
+		claimsMap: opts.ClaimsMap,
 	}
 
 	return p, nil
@@ -107,16 +117,11 @@ func WithScopes(scopes []string) func(*ProviderOptions) {
 	}
 }
 
-// GetProvider returns the OIDC provider.
-// This provider can be used to interact with the OpenID Connect server.
-func (p *Provider) GetProvider() *oidc.Provider {
-	return p.provider
-}
-
-// GetConfig returns the OAuth2 configuration.
-// This configuration contains the client ID, client secret, redirect URL, and other OAuth2 settings.
-func (p *Provider) GetConfig() oauth2.Config {
-	return p.oauthConfig
+// WithClaimsMap sets the claims map in the provider options.
+func WithClaimsMap(claimsMap provider.ClaimsMap) func(*ProviderOptions) {
+	return func(o *ProviderOptions) {
+		o.ClaimsMap = claimsMap
+	}
 }
 
 // GetAuthURL returns the authentication URL with the given state.
@@ -125,34 +130,40 @@ func (p *Provider) GetAuthURL(state string) string {
 	return p.oauthConfig.AuthCodeURL(state)
 }
 
-// GetTokenByCode exchanges the authorization code for an OAuth2 token.
+// Exchange exchanges an authorization code for an OAuth2 token.
 // Returns a token source that can be used to obtain the token.
-func (p *Provider) GetTokenByCode(ctx context.Context, code string) (*oauth2.TokenSource, error) {
-	var err error
-	var token *oauth2.Token
+func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
+	return p.oauthConfig.Exchange(ctx, code)
+}
 
-	if token, err = p.oauthConfig.Exchange(ctx, code); err != nil {
+// GetUserInfo retrieves user information from the provider using a valid token.
+// The user information is stored in the claims parameter.
+func (p *Provider) GetUserInfo(ctx context.Context, token *oauth2.Token) (provider.UserInfo, error) {
+	oidcUserInfo, err := p.provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
+	if err != nil {
 		return nil, err
 	}
 
-	tokenSource := p.oauthConfig.TokenSource(ctx, token)
-
-	return &tokenSource, nil
-}
-
-// GetUserInfo retrieves the user information using the OAuth2 token.
-// The user information is stored in the claims parameter.
-func (p *Provider) GetUserInfo(ctx context.Context, token *oauth2.TokenSource, claims interface{}) error {
-	var err error
-
-	var userInfo *oidc.UserInfo
-	if userInfo, err = p.provider.UserInfo(ctx, *token); err != nil {
-		return err
+	// Create a struct to hold the claims.
+	var claims struct {
+		Email    string   `json:"email"`
+		Verified bool     `json:"email_verified"`
+		Groups   []string `json:"groups"`
+		// Add other claims you need to extract here.
+	}
+	if err := oidcUserInfo.Claims(&claims); err != nil {
+		return nil, err
 	}
 
-	if err = userInfo.Claims(&claims); err != nil {
-		return err
+	rawClaims, err := json.Marshal(claims)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	userInfo := &UserInfo{
+		rawClaims: rawClaims,
+		claimsMap: p.claimsMap,
+	}
+
+	return userInfo, nil
 }
