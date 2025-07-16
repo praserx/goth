@@ -25,6 +25,13 @@ func newResponseWriter(w http.ResponseWriter) *responseWriter {
 	return &responseWriter{w, http.StatusOK} // Default to 200
 }
 
+// Header returns the header map of the original http.ResponseWriter.
+// This is crucial for ensuring that any middleware that modifies the headers
+// is modifying the *real* header map, not a copy.
+func (rw *responseWriter) Header() http.Header {
+	return rw.ResponseWriter.Header()
+}
+
 // Write captures the response body and allows the status code to be set.
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
