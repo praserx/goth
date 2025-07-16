@@ -11,13 +11,14 @@ services:
     command: [] # Command is executed by the entrypoint script
     environment:
       # --- Aegis Application Configuration ---
-      - UPSTREAM_URL=http://resource-server:80
-      - DISCOVERY_URL=http://keycloak:8080/realms/test/.well-known/openid-configuration # Use internal port 8080
-      - HEALTH_CHECK_URL=http://keycloak:9000/health # Health check URL for Keycloak
-      - CLIENT_ID=admin-cli # Must match TARGET_CLIENT_ID
-      - CLIENT_SECRET= # This is now set by the entrypoint script
-      - TLS_SKIP_VERIFY=true
+      - PROXY_UPSTREAM_URL=http://resource-server:80
+      - OIDC_PROVIDER_URL=http://keycloak:8080/realms/test # Use internal port 8080
+      - OIDC_CLIENT_ID=admin-cli # Must match TARGET_CLIENT_ID
+      - OIDC_CLIENT_SECRET= # This is now set by the entrypoint script
+      - OIDC_TLS_SKIP_VERIFY=true
       - REDIS_URL=redis:6379 # Address for the Redis service
+
+      - WEB_COOKIE_SECURE=false # Set to true if using HTTPS
 
       # --- Entrypoint Script Configuration ---
       - KEYCLOAK_URL=http://keycloak:8080 # Use the internal port for container-to-container communication
@@ -25,6 +26,7 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KEYCLOAK_REALM=test # The realm to use
       - TARGET_CLIENT_ID=application # Client whose secret will be fetched
+      - HEALTH_CHECK_URL=http://keycloak:9000/health # Health check URL for Keycloak
     depends_on:
       - resource-server
       - keycloak

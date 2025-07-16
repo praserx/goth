@@ -50,15 +50,15 @@ fi
 
 # --- Fetch the Client Secret ---
 echo "Fetching secret for client '${TARGET_CLIENT_ID}'..."
-CLIENT_SECRET=$(curl -s -X GET "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/clients/${CLIENT_INTERNAL_ID}/client-secret" \
+OIDC_CLIENT_SECRET=$(curl -s -X GET "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/clients/${CLIENT_INTERNAL_ID}/client-secret" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r ".value")
 
-if [ -z "$CLIENT_SECRET" ] || [ "$CLIENT_SECRET" = "null" ]; then
+if [ -z "$OIDC_CLIENT_SECRET" ] || [ "$OIDC_CLIENT_SECRET" = "null" ]; then
   echo "WARNING: Could not fetch client secret. This is expected for public clients."
-  export CLIENT_SECRET=""
+  export OIDC_CLIENT_SECRET=""
 else
-  echo "Successfully fetched client secret and exported it as CLIENT_SECRET."
-  export CLIENT_SECRET
+  echo "Successfully fetched client secret and exported it as OIDC_CLIENT_SECRET."
+  export OIDC_CLIENT_SECRET
 fi
 
 # --- Start the Aegis Application ---

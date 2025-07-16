@@ -57,19 +57,55 @@ var flagWebTLSKey = &cli.StringFlag{
 }
 
 // flagWebSessionName is a CLI flag for specifying the name used for session management.
-var flagWebSessionName = &cli.StringFlag{
-	Name:    "web.session-name",
-	Usage:   "Name for session management (e.g., a long, random string)",
-	Value:   "default-session-name",
-	Sources: cli.EnvVars("WEB_SESSION_KEY"),
+var flagWebCookieName = &cli.StringFlag{
+	Name:    "web.cookie-name",
+	Usage:   "Name for session cookie",
+	Value:   "AEGIS_SESSION", // Default session cookie name
+	Sources: cli.EnvVars("WEB_COOKIE_NAME"),
 }
 
-// flagOIDCDiscoveryURL is a CLI flag for specifying the OpenID Connect discovery URL.
-var flagOIDCDiscoveryURL = &cli.StringFlag{
-	Name:     "oidc.discovery-url",
-	Usage:    "URL for OpenID Connect discovery (e.g., https://example.com/.well-known/openid-configuration)",
+// flagWebCookieMaxAge is a CLI flag for specifying the maximum age of session cookies.
+var flagWebCookieMaxAge = &cli.IntFlag{
+	Name:     "web.cookie-max-age",
+	Usage:    "Maximum age for session cookies in seconds (default is 86400 seconds, or 24 hours)",
+	Value:    86400, // Default to 24 hours
+	Required: false,
+	Sources:  cli.EnvVars("WEB_COOKIE_MAX_AGE"),
+}
+
+// flagWebCookieSecure is a CLI flag for specifying whether session cookies should be secure.
+var flagWebCookieSecure = &cli.BoolFlag{
+	Name:     "web.cookie-secure",
+	Usage:    "Set session cookies to be secure (only sent over HTTPS)",
+	Value:    true, // Default to true for security
+	Required: false,
+	Sources:  cli.EnvVars("WEB_COOKIE_SECURE"),
+}
+
+// flagWebCookieHTTPOnly is a CLI flag for specifying whether session cookies should be HTTP-only.
+var flagWebCookieHTTPOnly = &cli.BoolFlag{
+	Name:     "web.cookie-http-only",
+	Usage:    "Set session cookies to be HTTP-only (not accessible via JavaScript)",
+	Value:    true, // Default to true for security
+	Required: false,
+	Sources:  cli.EnvVars("WEB_COOKIE_HTTP_ONLY"),
+}
+
+// flagWebCookieSameSite is a CLI flag for specifying the SameSite attribute for session cookies.
+var flagWebCookieSameSite = &cli.StringFlag{
+	Name:     "web.cookie-same-site",
+	Usage:    "SameSite attribute for session cookies (e.g., 'Strict', 'Lax', 'None')",
+	Value:    "Strict", // Default to Lax for compatibility
+	Required: false,
+	Sources:  cli.EnvVars("WEB_COOKIE_SAME_SITE"),
+}
+
+// flagOIDCProviderURL is a CLI flag for specifying the OpenID Connect provider URL.
+var flagOIDCProviderURL = &cli.StringFlag{
+	Name:     "oidc.provider-url",
+	Usage:    "URL for OpenID Connect provider (e.g., https://example.com/)",
 	Required: true,
-	Sources:  cli.EnvVars("OIDC_DISCOVERY_URL"),
+	Sources:  cli.EnvVars("OIDC_PROVIDER_URL"),
 }
 
 // flagOIDCClientID is a CLI flag for specifying the client ID for OpenID Connect.
