@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -50,7 +51,7 @@ func TestNewManager(t *testing.T) {
 		manager, err := NewManager()
 		assert.NoError(t, err)
 		assert.NotNil(t, manager)
-		assert.NotNil(t, manager.Store)
+		assert.NotNil(t, manager.GetStorage())
 	})
 
 	t.Run("with provided storage", func(t *testing.T) {
@@ -58,7 +59,7 @@ func TestNewManager(t *testing.T) {
 		manager, err := NewManager(WithStorage(mockStore))
 		assert.NoError(t, err)
 		assert.NotNil(t, manager)
-		assert.Equal(t, mockStore, manager.Store)
+		assert.Equal(t, mockStore, manager.GetStorage())
 	})
 }
 
@@ -66,8 +67,24 @@ func TestManager_Set(t *testing.T) {
 	mockStore := new(MockStorage)
 	manager, _ := NewManager(WithStorage(mockStore))
 	ctx := context.Background()
-	session := Session{AccessToken: "abc", RefreshToken: "def", IDToken: "ghi"}
-	sessionJSON := `{"access_token":"abc","refresh_token":"def","id_token":"ghi"}`
+
+	// Create a complete session object for testing.
+	// Using a fixed time ensures the marshaled JSON is consistent.
+	fixedTime, _ := time.Parse(time.RFC3339, "2025-01-01T12:00:00Z")
+	session := Session{
+		AccessToken:  "abc",
+		RefreshToken: "def",
+		ExpiresIn:    fixedTime,
+		IDToken:      "ghi",
+		Username:     "testuser",
+		Email:        "test@example.com",
+	}
+
+	// Marshal the session to JSON to get the exact expected string.
+	// This is more reliable than creating the JSON string manually.
+	sessionBytes, err := json.Marshal(session)
+	assert.NoError(t, err)
+	sessionJSON := string(sessionBytes)
 
 	t.Run("success", func(t *testing.T) {
 		mockStore.On("Set", ctx, "123", sessionJSON).Return(nil).Once()
@@ -91,7 +108,20 @@ func TestManager_Get(t *testing.T) {
 	manager, _ := NewManager(WithStorage(mockStore))
 	ctx := context.Background()
 	sessionID := "123"
-	sessionJSON := `{"access_token":"abc","refresh_token":"def","id_token":"ghi"}`
+
+	// Create a complete session object and its JSON representation.
+	fixedTime, _ := time.Parse(time.RFC3339, "2025-01-01T12:00:00Z")
+	expectedSession := Session{
+		AccessToken:  "abc",
+		RefreshToken: "def",
+		ExpiresIn:    fixedTime,
+		IDToken:      "ghi",
+		Username:     "testuser",
+		Email:        "test@example.com",
+	}
+	sessionBytes, err := json.Marshal(expectedSession)
+	assert.NoError(t, err)
+	sessionJSON := string(sessionBytes)
 
 	t.Run("success", func(t *testing.T) {
 		mockStore.On("Exists", ctx, sessionID).Return(true, nil).Once()
@@ -100,9 +130,13 @@ func TestManager_Get(t *testing.T) {
 		session, found, err := manager.Get(ctx, sessionID)
 		assert.NoError(t, err)
 		assert.True(t, found)
-		assert.Equal(t, "abc", session.AccessToken)
-		assert.Equal(t, "def", session.RefreshToken)
-		assert.Equal(t, "ghi", session.IDToken)
+		assert.Equal(t, expectedSession.AccessToken, session.AccessToken)
+		assert.Equal(t, expectedSession.RefreshToken, session.RefreshToken)
+		assert.Equal(t, expectedSession.IDToken, session.IDToken)
+		assert.Equal(t, expectedSession.Username, session.Username)
+		assert.Equal(t, expectedSession.Email, session.Email)
+		// Compare time separately for better error messages.
+		assert.True(t, expectedSession.ExpiresIn.Equal(session.ExpiresIn))
 		mockStore.AssertExpectations(t)
 	})
 

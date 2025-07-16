@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/praserx/aegis/pkg/storage"
 )
 
 // Manager manages session storage and serialization.
 type Manager struct {
-	Store storage.Storage
+	store storage.Storage
 }
 
 // ManagerOptions holds options for creating a new session manager.
@@ -36,7 +37,7 @@ func NewManager(options ...func(*ManagerOptions)) (*Manager, error) {
 	}
 
 	manager := &Manager{
-		Store: opts.Storage,
+		store: opts.Storage,
 	}
 
 	return manager, nil
@@ -49,6 +50,20 @@ func WithStorage(storage storage.Storage) func(*ManagerOptions) {
 	}
 }
 
+// GetStorage returns the storage backend used by the session manager.
+func (m *Manager) GetStorage() storage.Storage {
+	return m.store
+}
+
+// Exists checks if a session with the given ID exists in the storage.
+func (m *Manager) Exists(ctx context.Context, id string) (bool, error) {
+	exists, err := m.store.Exists(ctx, id)
+	if err != nil {
+		return false, fmt.Errorf("storage exists check error: %w", err)
+	}
+	return exists, nil
+}
+
 // Set stores a session by its ID, handling serialization.
 func (m *Manager) Set(ctx context.Context, id string, session Session) error {
 	data, err := json.Marshal(session)
@@ -56,8 +71,22 @@ func (m *Manager) Set(ctx context.Context, id string, session Session) error {
 		return fmt.Errorf("session marshal error: %w", err)
 	}
 
-	if err := m.Store.Set(ctx, id, string(data)); err != nil {
+	if err := m.store.Set(ctx, id, string(data)); err != nil {
 		return fmt.Errorf("storage set error: %w", err)
+	}
+
+	return nil
+}
+
+// SetWithTTL stores a session by its ID with a time-to-live (TTL), handling serialization.
+func (m *Manager) SetWithTTL(ctx context.Context, id string, session Session, ttl time.Duration) error {
+	data, err := json.Marshal(session)
+	if err != nil {
+		return fmt.Errorf("session marshal error: %w", err)
+	}
+
+	if err := m.store.SetWithTTL(ctx, id, string(data), ttl); err != nil {
+		return fmt.Errorf("storage set with TTL error: %w", err)
 	}
 
 	return nil
@@ -65,7 +94,11 @@ func (m *Manager) Set(ctx context.Context, id string, session Session) error {
 
 // Get retrieves a session by its ID, handling deserialization.
 func (m *Manager) Get(ctx context.Context, id string) (Session, bool, error) {
-	exists, err := m.Store.Exists(ctx, id)
+	if id == "" {
+		return Session{}, false, nil
+	}
+
+	exists, err := m.store.Exists(ctx, id)
 	if err != nil {
 		return Session{}, false, fmt.Errorf("storage exists check error: %w", err)
 	}
@@ -74,7 +107,7 @@ func (m *Manager) Get(ctx context.Context, id string) (Session, bool, error) {
 	}
 
 	var session Session
-	value, err := m.Store.Get(ctx, id)
+	value, err := m.store.Get(ctx, id)
 	if err != nil {
 		return Session{}, false, fmt.Errorf("storage get error: %w", err)
 	}
