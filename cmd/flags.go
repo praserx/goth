@@ -100,12 +100,12 @@ var flagWebCookieSameSite = &cli.StringFlag{
 	Sources:  cli.EnvVars("WEB_COOKIE_SAME_SITE"),
 }
 
-// flagOIDCProviderURL is a CLI flag for specifying the OpenID Connect provider URL.
-var flagOIDCProviderURL = &cli.StringFlag{
-	Name:     "oidc.provider-url",
-	Usage:    "URL for OpenID Connect provider (e.g., https://example.com/)",
+// flagOIDCDiscoveryURL is a CLI flag for specifying the OpenID Connect provider URL.
+var flagOIDCDiscoveryURL = &cli.StringFlag{
+	Name:     "oidc.discovery-url",
+	Usage:    "Discovery URL for OpenID Connect provider (see your OIDC provider documentation)",
 	Required: true,
-	Sources:  cli.EnvVars("OIDC_PROVIDER_URL"),
+	Sources:  cli.EnvVars("OIDC_DISCOVERY_URL"),
 }
 
 // flagOIDCClientID is a CLI flag for specifying the client ID for OpenID Connect.

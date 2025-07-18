@@ -13,9 +13,6 @@ import (
 
 	"github.com/praserx/aegis/pkg/aegis"
 	"github.com/praserx/aegis/pkg/logger"
-	oidcprovider "github.com/praserx/aegis/pkg/provider/oidc"
-	"github.com/praserx/aegis/pkg/session"
-	"github.com/praserx/aegis/pkg/storage"
 	"github.com/urfave/cli/v3"
 )
 
@@ -35,7 +32,7 @@ func main() {
 			flagWebCookieSecure,
 			flagWebCookieSameSite,
 			flagOIDCTLSSkipVerify,
-			flagOIDCProviderURL,
+			flagOIDCDiscoveryURL,
 			flagOIDCClientID,
 			flagOIDCClientSecret,
 			flagProxyUpstreamURL,
@@ -52,46 +49,17 @@ func main() {
 				return fmt.Errorf("invalid upstream URL: %w", err)
 			}
 
-			// Initialize storage based on configuration
-			var store storage.Storage
-			if cmd.Bool("storage.redis.enabled") {
-				store, err = storage.NewRedisStore(ctx, cmd.String("storage.redis.url"))
-				if err != nil {
-					return fmt.Errorf("failed to create redis store: %w", err)
-				}
-				logger.Info("Using Redis for session storage")
-			} else {
-				store, err = storage.NewInMemoryStore()
-				if err != nil {
-					return fmt.Errorf("failed to create in-memory store: %w", err)
-				}
-				logger.Info("Using in-memory for session storage")
-			}
-			defer store.Close()
-
-			sessionManager, err := session.NewManager(session.WithStorage(store))
+			sessionManager, err := NewSessionManager(ctx, cmd)
 			if err != nil {
 				return fmt.Errorf("failed to create session manager: %w", err)
 			}
 
-			// Initialize OIDC provider
-			oidcProvider, err := oidcprovider.NewProvider(ctx,
-				oidcprovider.WithIssuer(cmd.String("oidc.provider-url")),
-				oidcprovider.WithClientID(cmd.String("oidc.client-id")),
-				oidcprovider.WithClientSecret(cmd.String("oidc.client-secret")),
-				oidcprovider.WithRedirectURL(buildRedirectURL(cmd)), // Helper function to build redirect URL
-			)
+			oidcProvider, err := NewOIDCProvider(ctx, cmd)
 			if err != nil {
 				return fmt.Errorf("failed to create oidc provider: %w", err)
 			}
 
-			cookieOptions := session.CookieOptions{
-				Name:     cmd.String("web.cookie-name"),
-				MaxAge:   cmd.Int("web.cookie-max-age"),      // Max age in seconds
-				Secure:   cmd.Bool("web.cookie-secure"),      // Secure if specified
-				HttpOnly: cmd.Bool("web.cookie-http-only"),   // HttpOnly if specified
-				SameSite: cmd.String("web.cookie-same-site"), // SameSite attribute
-			}
+			cookieOptions := NewCookieOptions(cmd)
 
 			proxy, err := aegis.New(
 				aegis.WithUpstreamURL(upstreamURL),
@@ -164,20 +132,4 @@ func main() {
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-// buildRedirectURL constructs the redirect URL from the command flags.
-// This helper function centralizes the logic for determining the correct
-// redirect URL based on the server's configuration (HTTP/HTTPS).
-func buildRedirectURL(cmd *cli.Command) string {
-	// This is a placeholder. Implement the logic to build the redirect URL
-	// based on your application's routing and configuration.
-	// For example, it might be something like:
-	// scheme := "http"
-	// if cmd.String("web.tls-cert") != "" {
-	// 	scheme = "https"
-	// }
-	// host := cmd.String("web.listen-http") // or some other host configuration
-	// return fmt.Sprintf("%s://%s/callback", scheme, host)
-	return "http://localhost:8080/callback" // Example
 }
