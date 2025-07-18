@@ -22,6 +22,7 @@ func Proxy(target *url.URL) Middleware {
 			// For example, setting the X-Forwarded-Host header.
 			r.Host = target.Host
 			proxy.ServeHTTP(w, r)
+
 		})
 	}
 }
