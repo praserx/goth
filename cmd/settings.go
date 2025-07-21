@@ -9,7 +9,6 @@ import (
 
 	"github.com/praserx/aegis/pkg/logger"
 	"github.com/praserx/aegis/pkg/provider"
-	"github.com/praserx/aegis/pkg/provider/oidc"
 	"github.com/praserx/aegis/pkg/session"
 	"github.com/praserx/aegis/pkg/storage"
 	"github.com/urfave/cli/v3"
@@ -78,25 +77,27 @@ func NewOIDCProvider(ctx context.Context, cmd *cli.Command) (provider.Provider, 
 	}
 	httpClient.Timeout = 10 * time.Second // Set a reasonable timeout
 
-	config, err := oidc.FetchConfig(discoveryURL, httpClient)
+	config, err := provider.FetchOAuthMetadata(discoveryURL, httpClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OIDC configuration: %w", err)
 	}
 
-	opts := []func(*oidc.ProviderOptions){
-		oidc.WithIssuer(config.Issuer),
-		oidc.WithClientID(cmd.String("oidc.client-id")),
-		oidc.WithClientSecret(cmd.String("oidc.client-secret")),
+	fmt.Println(config) // Debugging line to print the raw metadata
+
+	opts := []func(*provider.Options){
+		provider.WithIssuer(config.Issuer),
+		provider.WithClientID(cmd.String("oidc.client-id")),
+		provider.WithClientSecret(cmd.String("oidc.client-secret")),
 	}
 
 	if cmd.String("oidc.redirect-url") != "" {
-		opts = append(opts, oidc.WithRedirectURL(cmd.String("oidc.redirect-url")))
+		opts = append(opts, provider.WithRedirectURL(cmd.String("oidc.redirect-url")))
 	} else {
-		opts = append(opts, oidc.WithRedirectURL(buildRedirectURL(cmd))) // Helper function to build redirect URL
+		opts = append(opts, provider.WithRedirectURL(buildRedirectURL(cmd))) // Helper function to build redirect URL
 	}
 
 	// Initialize OIDC provider
-	oidcProvider, err := oidc.NewProvider(ctx, opts...)
+	oidcProvider, err := provider.NewKeycloakProvider(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize OIDC provider: %w", err)
 	}

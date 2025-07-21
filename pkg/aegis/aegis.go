@@ -66,6 +66,7 @@ func New(options ...func(*Options)) (*Proxy, error) {
 	mux.Handle("/", chainMiddlewares(
 		middleware.AccessLogMiddleware(),
 		middleware.SessionMiddleware(opts.SessionManager, opts.CookieOptions),
+		middleware.AuthorizationMiddleware(opts.Provider),
 		middleware.Proxy(opts.UpstreamURL),
 	)(http.NotFoundHandler()))
 
