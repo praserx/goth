@@ -1,4 +1,4 @@
-package inmemory
+package storage
 
 import (
 	"context"
@@ -13,7 +13,7 @@ func TestInMemoryStore(t *testing.T) {
 
 	// Test case 1: Basic Set, Get, Exists, and Delete
 	t.Run("should set and get a value", func(t *testing.T) {
-		store, err := New()
+		store, err := NewInMemoryStore()
 		assert.NoError(t, err)
 
 		key := "test-key"
@@ -47,7 +47,7 @@ func TestInMemoryStore(t *testing.T) {
 
 	// Test case 2: Get a non-existent key
 	t.Run("should return not found for non-existent key", func(t *testing.T) {
-		store, err := New()
+		store, err := NewInMemoryStore()
 		assert.NoError(t, err)
 
 		// Get non-existent key
@@ -63,7 +63,7 @@ func TestInMemoryStore(t *testing.T) {
 	// Test case 3: TTL expiration
 	t.Run("should expire a key after its TTL", func(t *testing.T) {
 		// Use a custom store with a very short default expiration for the test
-		store, err := New()
+		store, err := NewInMemoryStore()
 		assert.NoError(t, err)
 
 		key := "ttl-key"

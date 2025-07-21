@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"time"
-
-	"github.com/praserx/aegis/pkg/storage/inmemory"
-	"github.com/praserx/aegis/pkg/storage/redis"
 )
 
 var ErrNotFound = errors.New("key not found")
@@ -26,16 +23,4 @@ type Storage interface {
 	Exists(ctx context.Context, key string) (bool, error)
 	// Close closes the storage connection.
 	Close() error
-}
-
-// NewRedisStore creates a new Redis storage instance.
-func NewRedisStore(ctx context.Context, url string) (Storage, error) {
-	var _ Storage = &redis.RedisStore{} // Ensure RedisStore implements Storage interface
-	return redis.New(url)
-}
-
-// NewInMemoryStore creates a new in-memory storage instance.
-func NewInMemoryStore() (Storage, error) {
-	var _ Storage = &inmemory.InMemoryStore{} // Ensure InMemoryStore implements Storage interface
-	return inmemory.New()
 }

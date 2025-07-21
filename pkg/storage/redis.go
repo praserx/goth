@@ -1,4 +1,4 @@
-package redis
+package storage
 
 import (
 	"context"
@@ -17,11 +17,11 @@ type RedisStore struct {
 }
 
 // Option is a functional option for configuring the RedisStore.
-type Option func(*RedisStore) error
+type RedisOption func(*RedisStore) error
 
 // WithClient allows providing an existing redis client.
 // The provided client will not be closed when Close() is called.
-func WithClient(client *redis.Client) Option {
+func WithClient(client *redis.Client) RedisOption {
 	return func(s *RedisStore) error {
 		s.client = client
 		s.close = func() error { return nil } // Do not close externally managed client.
@@ -32,7 +32,9 @@ func WithClient(client *redis.Client) Option {
 // New creates a new RedisStore instance and connects to the Redis server.
 // It takes a Redis connection URL (e.g., "redis://user:password@localhost:6379/0")
 // or functional options.
-func New(url string, opts ...Option) (*RedisStore, error) {
+func NewRedisStore(url string, opts ...RedisOption) (*RedisStore, error) {
+	var _ Storage = &RedisStore{} // Ensure RedisStore implements Storage interface
+
 	s := &RedisStore{}
 
 	// Apply functional options first. If a client is provided, we use it.

@@ -1,4 +1,4 @@
-package inmemory
+package storage
 
 import (
 	"context"
@@ -16,7 +16,8 @@ type InMemoryStore struct {
 
 // New creates a new InMemoryStore instance.
 // It initializes a cache with a default expiration and cleanup interval.
-func New() (*InMemoryStore, error) {
+func NewInMemoryStore() (*InMemoryStore, error) {
+	var _ Storage = &InMemoryStore{} // Ensure InMemoryStore implements Storage interface
 	c := ac.New(ac.OptionMaxRecords(512))
 	return &InMemoryStore{client: c}, nil
 }

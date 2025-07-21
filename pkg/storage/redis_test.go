@@ -1,4 +1,4 @@
-package redis
+package storage
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 func TestRedisStorage(t *testing.T) {
 	db, mock := redismock.NewClientMock()
 
-	storage, err := New("", WithClient(db))
+	storage, err := NewRedisStore("", WithClient(db))
 	assert.NoError(t, err)
 	defer storage.Close()
 
