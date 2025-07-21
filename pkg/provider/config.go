@@ -1,13 +1,15 @@
-package oidc
+package provider
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
-// Config represents the OpenID Connect configuration.
-type Config struct {
+// KeycloakConfig represents the OpenID Connect configuration for Keycloak.
+// Source: https://openid.net/specs/openid-connect-discovery-1_0-final.html#ProviderMetadata
+type OAuthMeta struct {
 	Issuer                                                    string   `json:"issuer"`
 	AuthorizationEndpoint                                     string   `json:"authorization_endpoint"`
 	TokenEndpoint                                             string   `json:"token_endpoint"`
@@ -74,22 +76,63 @@ type Config struct {
 	AuthorizationResponseIssParameterSupported bool `json:"authorization_response_iss_parameter_supported"`
 }
 
-// FetchConfig retrieves the OIDC configuration from the discovery URL.
-func FetchConfig(discoveryURL string, httpClient *http.Client) (*Config, error) {
-	resp, err := httpClient.Get(discoveryURL)
+// KeycloakUMA2Config represents the UMA server configuration endpoints
+// and supported features.
+type UMAMeta struct {
+	OAuthMeta
+	ResourceRegistrationEndpoint string `json:"resource_registration_endpoint"`
+	PermissionEndpoint           string `json:"permission_endpoint"`
+	PolicyEndpoint               string `json:"policy_endpoint"`
+}
+
+// FetchOAuthMetadata retrieves the OAuth metadata from the discovery URL.
+func FetchOAuthMetadata(url string, httpClient *http.Client) (*OAuthMeta, error) {
+	data, err := fetchMetadata(url, httpClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch OIDC discovery document: %w", err)
+		return nil, fmt.Errorf("failed to fetch metadata: %w", err)
+	}
+
+	fmt.Println(string(data)) // Debugging line to print the raw metadata
+
+	var meta OAuthMeta
+	if err := json.Unmarshal(data, &meta); err != nil {
+		return nil, fmt.Errorf("failed to decode oauth config: %w", err)
+	}
+
+	return &meta, nil
+}
+
+// FetchUMAMetadata retrieves the UMA metadata from the discovery URL.
+func FetchUMAMetadata(url string, httpClient *http.Client) (*UMAMeta, error) {
+	data, err := fetchMetadata(url, httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch metadata: %w", err)
+	}
+
+	var meta UMAMeta
+	if err := json.Unmarshal(data, &meta); err != nil {
+		return nil, fmt.Errorf("failed to decode uma2 config: %w", err)
+	}
+
+	return &meta, nil
+}
+
+// FetchProviderMetadata retrieves the OIDC configuration from the discovery URL.
+func fetchMetadata(url string, httpClient *http.Client) ([]byte, error) {
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch metadata: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch OIDC discovery document: %s", resp.Status)
+		return nil, fmt.Errorf("failed to fetch metadata: %s", resp.Status)
 	}
 
-	var config Config
-	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
-		return nil, fmt.Errorf("failed to decode OIDC discovery document: %w", err)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read metadata response body: %w", err)
 	}
 
-	return &config, nil
+	return data, nil
 }
