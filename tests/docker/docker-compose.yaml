@@ -12,8 +12,8 @@ services:
     environment:
       # --- Aegis Application Configuration ---
       - PROXY_UPSTREAM_URL=http://resource-server:80
-      - OIDC_PROVIDER_URL=http://keycloak:8080/realms/test # Use internal port 8080
-      - OIDC_CLIENT_ID=admin-cli # Must match TARGET_CLIENT_ID
+      - OIDC_DISCOVERY_URL=http://keycloak:8080/realms/test/.well-known/openid-configuration # Use internal port 8080
+      - OIDC_CLIENT_ID=application # Must match TARGET_CLIENT_ID
       - OIDC_CLIENT_SECRET= # This is now set by the entrypoint script
       - OIDC_TLS_SKIP_VERIFY=true
       - REDIS_URL=redis:6379 # Address for the Redis service

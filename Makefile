@@ -82,19 +82,19 @@ test:
 .PHONY: test-e2e
 test-e2e: build
 	@echo "Starting end-to-end test environment..."
-	@sudo docker-compose -f tests/docker/docker-compose.yaml up --build --force-recreate -d
+	@sudo docker compose -f tests/docker/docker-compose.yaml up --build --force-recreate -d
 
 # E2E Test Down: stops the docker-compose environment.
 .PHONY: test-e2e-down
 test-e2e-down:
 	@echo "Stopping end-to-end test environment..."
-	@sudo docker-compose -f tests/docker/docker-compose.yaml down
+	@sudo docker compose -f tests/docker/docker-compose.yaml down
 
 # E2E Test Logs: shows logs from the docker-compose environment.
 .PHONY: test-e2e-logs
 test-e2e-logs:
 	@echo "Showing logs from end-to-end test environment..."
-	@sudo docker-compose -f tests/docker/docker-compose.yaml logs -f
+	@sudo docker compose -f tests/docker/docker-compose.yaml logs -f
 
 # Build: builds the Go application with static linking.
 .PHONY: build

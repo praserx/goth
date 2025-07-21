@@ -48,6 +48,11 @@ if [ -z "$CLIENT_INTERNAL_ID" ] || [ "$CLIENT_INTERNAL_ID" = "null" ]; then
   exit 1
 fi
 
+# --- Regenerate the client secret if it is a confidential client ---
+echo "Checking if client '${TARGET_CLIENT_ID}' is confidential..."
+CLIENT_TYPE=$(curl -s -X POST "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/clients/${CLIENT_INTERNAL_ID}/client-secret" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r ".clientType")
+
 # --- Fetch the Client Secret ---
 echo "Fetching secret for client '${TARGET_CLIENT_ID}'..."
 OIDC_CLIENT_SECRET=$(curl -s -X GET "${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/clients/${CLIENT_INTERNAL_ID}/client-secret" \
