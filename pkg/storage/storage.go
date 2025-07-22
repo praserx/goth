@@ -17,6 +17,8 @@ type Storage interface {
 	Set(ctx context.Context, key string, value string) error
 	// SetWithTTL stores a key-value pair with a time-to-live (TTL).
 	SetWithTTL(ctx context.Context, key string, value string, ttl time.Duration) error
+	// Update updates a key's value without changing its TTL.
+	Update(ctx context.Context, key string, value string) error
 	// Delete removes a value by key.
 	Delete(ctx context.Context, key string) error
 	// Exists checks if a key exists.

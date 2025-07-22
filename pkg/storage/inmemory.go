@@ -48,16 +48,26 @@ func (s *InMemoryStore) SetWithTTL(_ context.Context, key string, value string, 
 	return nil
 }
 
+func (s *InMemoryStore) Update(_ context.Context, key string, value string) error {
+	// In-memory cache does not have a specific update operation; SetWithTTL can be used to update the value.
+	err := s.SetWithTTL(context.Background(), key, value, ac.KeepTTL)
+	if err != nil {
+		return fmt.Errorf("failed to update key in cache: %w", err)
+	}
+	return nil
+}
+
 // Delete removes a key from the cache.
 func (s *InMemoryStore) Delete(_ context.Context, key string) error {
-	s.client.Set(key, nil, 1*time.Microsecond) // Duration has to be non-zero, so we use a very short duration
+	if err := s.client.Delete(key); err != nil {
+		return fmt.Errorf("failed to delete key from cache: %w", err)
+	}
 	return nil
 }
 
 // Exists checks if a key exists in the cache.
 func (s *InMemoryStore) Exists(_ context.Context, key string) (bool, error) {
-	_, err := s.client.Get(key)
-	return !errors.Is(err, ac.ErrNotFound), nil
+	return s.client.Exists(key), nil
 }
 
 // Close is a no-op for the in-memory store as there is.

@@ -79,6 +79,12 @@ func (s *RedisStore) SetWithTTL(ctx context.Context, key string, value string, t
 	return s.client.Set(ctx, key, value, ttl).Err()
 }
 
+// Update updates a key's value in Redis without changing TTL.
+func (s *RedisStore) Update(ctx context.Context, key string, value string) error {
+	// Redis does not have a specific update operation; SetWithTTL can be used to update the value.
+	return s.SetWithTTL(ctx, key, value, redis.KeepTTL)
+}
+
 // Delete removes a key from Redis.
 func (s *RedisStore) Delete(ctx context.Context, key string) error {
 	return s.client.Del(ctx, key).Err()
