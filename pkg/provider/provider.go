@@ -22,7 +22,7 @@ type UserInfo interface {
 	GetID() string
 	GetEmail() string
 	GetName() string
-	GetClaims(v interface{}) error
+	GetClaims(v any) error
 }
 
 // Provider defines a generic interface for an authentication provider.

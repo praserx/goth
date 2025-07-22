@@ -5,13 +5,23 @@ import (
 
 	"github.com/praserx/aegis/pkg/provider"
 	"github.com/praserx/aegis/pkg/session"
+	"github.com/praserx/aegis/pkg/storage"
 )
 
 type Options struct {
 	Provider       provider.Provider     // Authentication provider
 	UpstreamURL    *url.URL              // URL for the upstream service
-	SessionManager *session.Manager      // Session management instance
+	SessionStorage storage.Storage       // Session management instance
 	CookieOptions  session.CookieOptions // Cookie options
+	EndpointPaths  EndpointPaths         // Custom endpoint paths for authentication
+}
+
+type EndpointPaths struct {
+	Login               string // Path for login endpoint
+	Logout              string // Path for logout endpoint
+	Callback            string // Path for callback endpoint
+	BackchannelLogout   string // Path for backchannel logout endpoint
+	AfterLogoutRedirect string // URL to redirect to after logout
 }
 
 func WithProvider(p provider.Provider) func(*Options) {
@@ -26,14 +36,20 @@ func WithUpstreamURL(url *url.URL) func(*Options) {
 	}
 }
 
-func WithSessionManager(manager *session.Manager) func(*Options) {
+func WithSessionManager(sessionStorage storage.Storage) func(*Options) {
 	return func(o *Options) {
-		o.SessionManager = manager
+		o.SessionStorage = sessionStorage
 	}
 }
 
 func WithCookieOptions(opts session.CookieOptions) func(*Options) {
 	return func(o *Options) {
 		o.CookieOptions = opts
+	}
+}
+
+func WithCustomEndpointPaths(paths EndpointPaths) func(*Options) {
+	return func(o *Options) {
+		o.EndpointPaths = paths
 	}
 }

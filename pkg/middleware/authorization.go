@@ -10,7 +10,7 @@ import (
 
 // AuthorizationMiddleware checks if a user is authorized to access a resource.
 // It uses the AuthorizationResolver to make a decision.
-func AuthorizationMiddleware(umaProvider provider.Provider) func(http.Handler) http.Handler {
+func AuthorizationMiddleware(asp provider.Provider) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger.Info(fmt.Sprintf("executing authorization middleware: method: %s, url: %s", r.Method, r.URL.Path))
@@ -21,14 +21,15 @@ func AuthorizationMiddleware(umaProvider provider.Provider) func(http.Handler) h
 				return
 			}
 
-			// If the resolver is not configured, we deny access by default for safety.
-			if umaProvider == nil {
+			// If the authorization server provider is not configured,
+			// we deny access by default for safety.
+			if asp == nil {
 				logger.Error("authorization resolver is not configured")
 				http.Error(w, "Authorization service not configured", http.StatusInternalServerError)
 				return
 			}
 
-			allowed, err := umaProvider.AuthorizeAnonymousRequest(r.Context(), sessionData, r)
+			allowed, err := asp.AuthorizeAnonymousRequest(r.Context(), sessionData, r)
 			if err != nil {
 				logger.Error(fmt.Sprintf("error checking access: %v", err))
 				http.Error(w, "Error checking access", http.StatusInternalServerError)
