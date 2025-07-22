@@ -134,6 +134,33 @@ var flagOIDCTLSSkipVerify = &cli.BoolFlag{
 	Sources:  cli.EnvVars("OIDC_TLS_SKIP_VERIFY"),
 }
 
+// flagOIDCLoginPath is a CLI flag for specifying the path for the OIDC login endpoint.
+var flagOIDCLoginPath = &cli.StringFlag{
+	Name:     "oidc.login-path",
+	Usage:    "Path for OIDC login endpoint (default is /auth/login)",
+	Value:    "/auth/login",
+	Required: false,
+	Sources:  cli.EnvVars("OIDC_LOGIN_PATH"),
+}
+
+// flagOIDCLogoutPath is a CLI flag for specifying the path for the OIDC logout endpoint.
+var flagOIDCLogoutPath = &cli.StringFlag{
+	Name:     "oidc.logout-path",
+	Usage:    "Path for OIDC logout endpoint (default is /auth/logout)",
+	Value:    "/auth/logout",
+	Required: false,
+	Sources:  cli.EnvVars("OIDC_LOGOUT_PATH"),
+}
+
+// flagOIDCCallbackPath is a CLI flag for specifying the path for the OIDC callback endpoint.
+var flagOIDCCallbackPath = &cli.StringFlag{
+	Name:     "oidc.callback-path",
+	Usage:    "Path for OIDC callback endpoint (default is /auth/callback)",
+	Value:    "/auth/callback",
+	Required: false,
+	Sources:  cli.EnvVars("OIDC_CALLBACK_PATH"),
+}
+
 // flagProxyUpstreamURL is a CLI flag for specifying the URL of the upstream service.
 var flagProxyUpstreamURL = &cli.StringFlag{
 	Name:     "proxy.upstream-url",

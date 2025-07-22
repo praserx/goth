@@ -35,6 +35,9 @@ func main() {
 			flagOIDCDiscoveryURL,
 			flagOIDCClientID,
 			flagOIDCClientSecret,
+			flagOIDCLoginPath,
+			flagOIDCLogoutPath,
+			flagOIDCCallbackPath,
 			flagProxyUpstreamURL,
 			flagStorageRedisEnabled,
 			flagStorageRedisURL,
@@ -49,7 +52,7 @@ func main() {
 				return fmt.Errorf("invalid upstream URL: %w", err)
 			}
 
-			sessionManager, err := NewSessionManager(ctx, cmd)
+			sessionManager, err := NewSessionStorage(ctx, cmd)
 			if err != nil {
 				return fmt.Errorf("failed to create session manager: %w", err)
 			}

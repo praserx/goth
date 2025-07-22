@@ -14,14 +14,14 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// NewSessionManager initializes a session manager based on command line flags.
-func NewSessionManager(ctx context.Context, cmd *cli.Command) (*session.Manager, error) {
+// NewSessionStorage initializes a session manager based on command line flags.
+func NewSessionStorage(ctx context.Context, cmd *cli.Command) (storage.Storage, error) {
 	var err error
 
 	// Initialize storage based on configuration
 	var store storage.Storage
 	if cmd.Bool("storage.redis.enabled") {
-		store, err = storage.NewRedisStore(ctx, cmd.String("storage.redis.url"))
+		store, err = storage.NewRedisStore(cmd.String("storage.redis.url"))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create redis store: %w", err)
 		}
@@ -33,14 +33,8 @@ func NewSessionManager(ctx context.Context, cmd *cli.Command) (*session.Manager,
 		}
 		logger.Info("Using in-memory for session storage")
 	}
-	defer store.Close()
 
-	sessionManager, err := session.NewManager(session.WithStorage(store))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create session manager: %w", err)
-	}
-
-	return sessionManager, nil
+	return store, nil
 }
 
 // NewCookieOptions creates session cookie options based on command line flags.
