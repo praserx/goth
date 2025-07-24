@@ -147,7 +147,12 @@ func newLoginHandler(p provider.Provider, c storage.Storage, opts session.Cookie
 		}
 
 		cookie := session.NewAuthCookie(authSessionID, opts)
-		session.SetAuthSession(r.Context(), c, authSessionID, authSession)
+		err = session.SetAuthSession(r.Context(), c, authSessionID, authSession)
+		if err != nil {
+			logger.Errorf("failed to set auth session: %v", err)
+			writer.ErrorResponse(w, r, http.StatusInternalServerError, fmt.Sprintf("Failed to set auth session: %v", err))
+			return
+		}
 
 		redirectURL := p.GetAuthURL(authSession.State)
 		http.SetCookie(w, cookie)
@@ -221,7 +226,12 @@ func newCallbackHandler(p provider.Provider, c storage.Storage, opts session.Coo
 		// sessionObj.Claims = userInfo.GetClaims()
 
 		cookie := session.NewSessionCookie(userSessionID, int(token.ExpiresIn), opts)
-		session.SetUserSession(r.Context(), c, userSessionID, userSession)
+		err = session.SetUserSession(r.Context(), c, userSessionID, userSession)
+		if err != nil {
+			logger.Errorf("failed to set user session: %v", err)
+			writer.ErrorResponse(w, r, http.StatusInternalServerError, fmt.Sprintf("Failed to set user session: %v", err))
+			return
+		}
 
 		http.SetCookie(w, cookie)
 		http.Redirect(w, r, authSession.OrigURL.String(), http.StatusFound)

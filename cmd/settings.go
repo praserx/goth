@@ -16,7 +16,7 @@ import (
 )
 
 // NewSessionStorage initializes a session manager based on command line flags.
-func NewSessionStorage(ctx context.Context, cmd *cli.Command) (storage.Storage, error) {
+func NewSessionStorage(cmd *cli.Command) (storage.Storage, error) {
 	var err error
 
 	// Initialize storage based on configuration

@@ -44,7 +44,10 @@ func (s *InMemoryStore) Set(_ context.Context, key string, value string) error {
 
 // SetWithTTL stores a key-value pair in the cache with a specified time-to-live (TTL).
 func (s *InMemoryStore) SetWithTTL(_ context.Context, key string, value string, ttl time.Duration) error {
-	s.client.Set(key, []byte(value), ttl)
+	err := s.client.Set(key, []byte(value), ttl)
+	if err != nil {
+		return fmt.Errorf("failed to set key in cache: %w", err)
+	}
 	return nil
 }
 
