@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/praserx/goth/pkg/logger"
 	"github.com/praserx/goth/pkg/provider"
 	"github.com/praserx/goth/pkg/session"
 	"github.com/praserx/goth/pkg/storage"
-	"github.com/urfave/cli/v3"
 )
 
 // NewSessionStorage initializes a session manager based on command line flags.

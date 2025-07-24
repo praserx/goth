@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/praserx/goth/pkg/logger"
 	"github.com/praserx/goth/pkg/middleware"
 	"github.com/praserx/goth/pkg/provider"

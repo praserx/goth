@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+
 	"github.com/praserx/goth/pkg/logger"
 	"github.com/praserx/goth/pkg/provider"
 	"github.com/praserx/goth/pkg/session"

@@ -11,9 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/praserx/goth/pkg/logger"
 	"github.com/praserx/goth/pkg/proxy"
-	"github.com/urfave/cli/v3"
 )
 
 func main() {
