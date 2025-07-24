@@ -1,4 +1,4 @@
-# Makefile for the Aegis project
+# Makefile for the Goth project
 
 # Go parameters
 GOCMD=go

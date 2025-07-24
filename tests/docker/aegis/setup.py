@@ -192,7 +192,7 @@ def assign_client_roles_to_user(token, username, roles):
         print(f"Failed to assign roles {roles} to user '{username}' (HTTP {r.status_code})")
 
 if __name__ == "__main__":
-    print("Starting Keycloak setup for Aegis...")
+    print("Starting Keycloak setup for Goth...")
     wait_for_keycloak()
     token = get_admin_token()
     client_id = get_client_internal_id(token)

@@ -4,7 +4,7 @@ set -e
 echo "Python version:"
 python3 --version
 
-echo "Setting up Keycloak environment for Aegis..."
+echo "Setting up Keycloak environment for Goth..."
 python3 -u /setup.py
 
 source /.env

@@ -194,7 +194,7 @@ else
   echo "No users.txt file found, skipping user creation."
 fi
 
-# --- Start the Aegis Application ---
+# --- Start the Goth Application ---
 echo "Starting aegis proxy..."
 # The original command passed to the container will be executed.
 # This assumes the aegis binary is the CMD.

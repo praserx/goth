@@ -10,7 +10,7 @@ services:
       - "8000:8000"
     command: [] # Command is executed by the entrypoint script
     environment:
-      # --- Aegis Application Configuration ---
+      # --- Goth Application Configuration ---
       - WEB_LISTEN_HTTP=:8000
       - WEB_COOKIE_SECURE=false # Set to true if using HTTPS
       - WEB_COOKIE_SAME_SITE=lax

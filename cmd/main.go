@@ -46,7 +46,7 @@ func main() {
 		},
 		UseShortOptionHandling: true,
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			logger.Info("Starting Aegis proxy...")
+			logger.Info("Starting Goth proxy...")
 
 			upstreamURL, err := url.Parse(cmd.String("proxy.upstream-url"))
 			if err != nil {
