@@ -92,8 +92,6 @@ func FetchOAuthMetadata(url string, httpClient *http.Client) (*OAuthMeta, error)
 		return nil, fmt.Errorf("failed to fetch metadata: %w", err)
 	}
 
-	fmt.Println(string(data)) // Debugging line to print the raw metadata
-
 	var meta OAuthMeta
 	if err := json.Unmarshal(data, &meta); err != nil {
 		return nil, fmt.Errorf("failed to decode oauth config: %w", err)

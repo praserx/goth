@@ -77,8 +77,6 @@ func NewOIDCProvider(ctx context.Context, cmd *cli.Command) (provider.Provider, 
 		return nil, fmt.Errorf("failed to fetch OIDC configuration: %w", err)
 	}
 
-	fmt.Println(config) // Debugging line to print the raw metadata
-
 	opts := []func(*provider.Options){
 		provider.WithIssuer(config.Issuer),
 		provider.WithClientID(cmd.String("oidc.client-id")),
