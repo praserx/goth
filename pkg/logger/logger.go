@@ -108,8 +108,14 @@ func Infof(format string, values ...interface{}) {
 
 // Infov logs an informational message with verbosity and key-value pairs.
 // The verbosity level determines when the message is logged.
-func Infov(message string, v int, keysAndValues ...interface{}) {
-	GetLogger().Infov(message, v, keysAndValues...)
+func Infov(v int, message string, keysAndValues ...interface{}) {
+	GetLogger().Infov(v, message, keysAndValues...)
+}
+
+// Infovf logs an informational message with verbosity and formatted values.
+// The verbosity level determines when the message is logged.
+func Infovf(format string, v int, values ...interface{}) {
+	Infov(v, fmt.Sprintf(format, values...))
 }
 
 // Warning logs a warning message.
@@ -162,7 +168,7 @@ func (l *Logger) Info(message string) {
 }
 
 // Infov logs an informational message with key-value pairs for a specific verbosity level.
-func (l *Logger) Infov(message string, v int, keysAndValues ...interface{}) {
+func (l *Logger) Infov(v int, message string, keysAndValues ...interface{}) {
 	if l.verbosity >= v {
 		if fields := l.parseKeysAndValues(keysAndValues...); fields != nil {
 			l.LogError("info", message, fields)

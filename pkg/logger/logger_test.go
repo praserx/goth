@@ -36,14 +36,14 @@ func TestLoggerInfoVerbosity(t *testing.T) {
 	var buf bytes.Buffer
 	logger := New(WithWriter(&buf), WithVerbosity(0))
 
-	logger.Infov("should not log this", 1) // v=1 > logger verbosity=0
+	logger.Infov(1, "should not log this") // v=1 > logger verbosity=0
 
 	output := buf.String()
 	if output != "" {
 		t.Errorf("Expected no log output for higher verbosity, got %s", output)
 	}
 
-	logger.Infov("should log this", 0) // v=0 == logger verbosity=0
+	logger.Infov(0, "should log this") // v=0 == logger verbosity=0
 	output = buf.String()
 	if !strings.Contains(output, "should log this") {
 		t.Errorf("Expected log output to contain 'should log this', got %s", output)
@@ -100,7 +100,20 @@ func TestLoggerAccess(t *testing.T) {
 	if !ok {
 		t.Fatal("Log entry missing 'http.response' field")
 	}
-	if code := respVal["status_code"].(float64); code != http.StatusOK {
+	codeVal, ok := respVal["status_code"]
+	if !ok {
+		t.Fatal("Log entry missing 'http.response.status_code' field")
+	}
+	var code int
+	switch v := codeVal.(type) {
+	case float64:
+		code = int(v)
+	case int:
+		code = v
+	default:
+		t.Fatalf("Unexpected type for status_code: %T", v)
+	}
+	if code != http.StatusOK {
 		t.Errorf("Expected status code %d, got %v", http.StatusOK, code)
 	}
 
@@ -109,7 +122,15 @@ func TestLoggerAccess(t *testing.T) {
 	if !ok {
 		t.Fatal("Log entry missing 'source' field")
 	}
-	if ip := sourceVal["ip"].(string); ip != "192.0.2.1" {
+	ipVal, ok := sourceVal["ip"]
+	if !ok {
+		t.Fatal("Log entry missing 'source.ip' field")
+	}
+	ip, ok := ipVal.(string)
+	if !ok {
+		t.Fatalf("Unexpected type for source.ip: %T", ipVal)
+	}
+	if ip != "192.0.2.1" {
 		t.Errorf("Expected source ip %s, got %s", "192.0.2.1", ip)
 	}
 }
