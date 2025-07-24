@@ -9,5 +9,5 @@ python3 -u /setup.py
 
 source /.env
 
-echo "Starting aegis proxy..."
-exec /aegis
+echo "Starting goth proxy..."
+exec /goth

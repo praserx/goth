@@ -11,14 +11,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/praserx/aegis/pkg/logger"
-	"github.com/praserx/aegis/pkg/proxy"
+	"github.com/praserx/goth/pkg/logger"
+	"github.com/praserx/goth/pkg/proxy"
 	"github.com/urfave/cli/v3"
 )
 
 func main() {
 	cmd := &cli.Command{
-		Name:  "aegis",
+		Name:  "goth",
 		Usage: "A lightweight, security-focused authorization proxy",
 		Flags: []cli.Flag{
 			flagVerbose,
@@ -72,7 +72,7 @@ func main() {
 				proxy.WithCookieOptions(cookieOptions),
 			)
 			if err != nil {
-				return fmt.Errorf("failed to create aegis proxy: %w", err)
+				return fmt.Errorf("failed to create goth proxy: %w", err)
 			}
 
 			listenHTTP := cmd.String("web.listen-http")

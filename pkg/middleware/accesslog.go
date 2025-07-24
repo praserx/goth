@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/praserx/aegis/pkg/logger"
-	"github.com/praserx/aegis/pkg/session"
-	"github.com/praserx/aegis/pkg/storage"
+	"github.com/praserx/goth/pkg/logger"
+	"github.com/praserx/goth/pkg/session"
+	"github.com/praserx/goth/pkg/storage"
 )
 
 // responseWriter is a wrapper for http.ResponseWriter to capture the status code

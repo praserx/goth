@@ -6,7 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/praserx/aegis/pkg/logger"
+	"github.com/praserx/goth/pkg/logger"
 )
 
 // Proxy returns a middleware that forwards requests to the given target URL.

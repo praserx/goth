@@ -195,7 +195,7 @@ else
 fi
 
 # --- Start the Goth Application ---
-echo "Starting aegis proxy..."
+echo "Starting goth proxy..."
 # The original command passed to the container will be executed.
-# This assumes the aegis binary is the CMD.
-exec /aegis
+# This assumes the goth binary is the CMD.
+exec /goth

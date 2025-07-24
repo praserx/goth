@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/praserx/aegis/pkg/logger"
-	"github.com/praserx/aegis/pkg/session"
-	"github.com/praserx/aegis/pkg/storage"
+	"github.com/praserx/goth/pkg/logger"
+	"github.com/praserx/goth/pkg/session"
+	"github.com/praserx/goth/pkg/storage"
 )
 
 // mockResponseWriter is a mock implementation of http.ResponseWriter for testing.
@@ -53,9 +53,9 @@ func TestAccessLogMiddleware(t *testing.T) {
 		t.Fatalf("failed to create in-memory store: %v", err)
 	}
 	opts := session.CookieOptions{
-		SessionCookieName:  "aegis-session",
-		TrackingCookieName: "aegis-track",
-		AuthCookieName:     "aegis-auth",
+		SessionCookieName:  "goth-session",
+		TrackingCookieName: "goth-track",
+		AuthCookieName:     "goth-auth",
 		MaxAge:             3600,
 		Secure:             false,
 		SameSite:           "Lax",
@@ -128,9 +128,9 @@ func TestLogMessageFormat(t *testing.T) {
 		t.Fatalf("failed to create in-memory store: %v", err)
 	}
 	opts := session.CookieOptions{
-		SessionCookieName:  "aegis-session",
-		TrackingCookieName: "aegis-track",
-		AuthCookieName:     "aegis-auth",
+		SessionCookieName:  "goth-session",
+		TrackingCookieName: "goth-track",
+		AuthCookieName:     "goth-auth",
 		MaxAge:             3600,
 		Secure:             false,
 		SameSite:           "Lax",

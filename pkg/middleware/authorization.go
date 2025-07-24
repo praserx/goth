@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/praserx/aegis/pkg/logger"
-	"github.com/praserx/aegis/pkg/provider"
-	"github.com/praserx/aegis/pkg/session"
-	"github.com/praserx/aegis/pkg/storage"
-	"github.com/praserx/aegis/pkg/writer"
+	"github.com/praserx/goth/pkg/logger"
+	"github.com/praserx/goth/pkg/provider"
+	"github.com/praserx/goth/pkg/session"
+	"github.com/praserx/goth/pkg/storage"
+	"github.com/praserx/goth/pkg/writer"
 )
 
 const (

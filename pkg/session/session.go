@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/praserx/aegis/pkg/storage"
+	"github.com/praserx/goth/pkg/storage"
 )
 
 // SessionContextKey is the key used to store session data in the request context.

@@ -11,7 +11,7 @@
 //
 //	import (
 //		"os"
-//		"github.com/aegis/pkg/logger"
+//		"github.com/goth/pkg/logger"
 //	)
 //
 //	func main() {

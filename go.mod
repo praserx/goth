@@ -1,4 +1,4 @@
-module github.com/praserx/aegis
+module github.com/praserx/goth
 
 go 1.23.1
 

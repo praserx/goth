@@ -25,7 +25,7 @@ PKG_DIR := ./pkg
 TEST_DIR := ./tests
 
 # Application name
-APP_NAME := aegis
+APP_NAME := goth
 
 # Default target: runs style checks, linting, tests, and then builds the application.
 .PHONY: all
@@ -101,7 +101,7 @@ test-e2e-logs:
 build:
 	@echo "Building the application with static linking..."
 	CGO_ENABLED=0 $(GOBUILD) -ldflags '-extldflags "-static"' -o $(BIN_DIR)/$(APP_NAME) $(CMD_DIR)/...
-	CGO_ENABLED=0 $(GOBUILD) -ldflags '-extldflags "-static"' -o $(TEST_DIR)/docker/aegis/bin/$(APP_NAME) $(CMD_DIR)/...
+	CGO_ENABLED=0 $(GOBUILD) -ldflags '-extldflags "-static"' -o $(TEST_DIR)/docker/goth/bin/$(APP_NAME) $(CMD_DIR)/...
 
 # Clean: cleans up build artifacts.
 .PHONY: clean

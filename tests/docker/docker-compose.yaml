@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  aegis:
+  goth:
     build:
-      context: ./aegis # The context is the root of the project
+      context: ./goth # The context is the root of the project
       dockerfile: Dockerfile # Use the new Dockerfile with entrypoint
-    container_name: aegis
+    container_name: goth
     ports:
       - "8000:8000"
     command: [] # Command is executed by the entrypoint script
@@ -37,7 +37,7 @@ services:
       - redis
     restart: unless-stopped
     networks:
-      - aegis-net
+      - goth-net
 
   resource-server:
     build:
@@ -48,7 +48,7 @@ services:
       - "8888:80" # Changed to 8081 to avoid conflict
     restart: unless-stopped
     networks:
-      - aegis-net
+      - goth-net
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
@@ -64,7 +64,7 @@ services:
       - "9000:9000" # Expose the health check on port 9099
     restart: unless-stopped
     networks:
-      - aegis-net
+      - goth-net
 
   redis:
     image: redis:7-alpine
@@ -72,7 +72,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - aegis-net
+      - goth-net
 
 networks:
-  aegis-net:
+  goth-net:

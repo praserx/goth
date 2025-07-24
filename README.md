@@ -1,4 +1,4 @@
-# aegis
+# goth
 
 Lightweight authorization proxy project.
 
@@ -15,7 +15,7 @@ This project is currently in its initial development phase. The code is under ac
 
 ## Getting Started
 
-To get started with `aegis`, you can use the provided `Makefile`.
+To get started with `goth`, you can use the provided `Makefile`.
 
 ### Prerequisites
 

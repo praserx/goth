@@ -257,7 +257,7 @@ func (l *Logger) LogAccess(r *http.Request, statusCode int, latency time.Duratio
 		"@timestamp": time.Now().UTC().Format(time.RFC3339Nano),
 		"log": map[string]interface{}{
 			"level":  "info",
-			"logger": "aegis",
+			"logger": "goth",
 		},
 		"message": fmt.Sprintf(`%s %s - %d`, r.Method, r.URL.Path, statusCode),
 		"http": map[string]interface{}{
@@ -292,7 +292,7 @@ func (l *Logger) LogError(level, message string, fields map[string]interface{}) 
 		"@timestamp": time.Now().UTC().Format(time.RFC3339Nano),
 		"log": map[string]interface{}{
 			"level":  level,
-			"logger": "aegis",
+			"logger": "goth",
 		},
 		"message": message,
 	}

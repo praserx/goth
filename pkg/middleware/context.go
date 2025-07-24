@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/praserx/aegis/pkg/session"
+	"github.com/praserx/goth/pkg/session"
 )
 
 const (

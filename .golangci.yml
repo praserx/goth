@@ -58,7 +58,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/praserx/aegis
+        - github.com/praserx/goth
   exclusions:
     generated: lax
     paths:

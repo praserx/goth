@@ -1,8 +1,8 @@
 package handler
 
 // import (
-// 	"github.com/praserx/aegis/pkg/provider"
-// 	"github.com/praserx/aegis/pkg/session"
+// 	"github.com/praserx/goth/pkg/provider"
+// 	"github.com/praserx/goth/pkg/session"
 // )
 
 // // AuthHandler provides handlers for authentication routes.
