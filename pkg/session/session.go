@@ -4,63 +4,36 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/praserx/aegis/pkg/storage"
 )
 
+// SessionContextKey is the key used to store session data in the request context.
+type sessionContextKey string
+
+const UserSessionContextKey = sessionContextKey("user_session")
+const AuthSessionContextKey = sessionContextKey("auth_session")
+
 const DefaultSessionTTL = 24 * time.Hour // Default session expiration time
+const AuthSessionTTL = 5 * time.Minute   // Short term authentication session expiration time
 
-// CookieOptions stores configuration for a session cookie.
-type CookieOptions struct {
-	Name     string // Name of the cookie
-	Path     string // Path for the cookie, defaults to "/"
-	Domain   string // Domain for the cookie, if applicable
-	MaxAge   int    // MaxAge in seconds
-	Secure   bool   // Indicates if the cookie should only be sent over HTTPS
-	HttpOnly bool   // Prevents JavaScript access to the cookie
-	SameSite string // Can be "Strict", "Lax", or "None"
+// UserSession represents the structure of a user session object.
+type UserSession struct {
+	AccessToken  string                 `json:"access_token,omitempty"`
+	RefreshToken string                 `json:"refresh_token,omitempty"`
+	ExpiresIn    time.Time              `json:"expires_in,omitempty"`
+	IDToken      string                 `json:"id_token,omitempty"`
+	Sub          string                 `json:"sub,omitempty"`
+	Email        string                 `json:"email,omitempty"`
+	Username     string                 `json:"username,omitempty"`
+	Claims       map[string]interface{} `json:"claims,omitempty"`
 }
 
-// Session represents the structure of a session object.
-type Session struct {
-	sessionID     string                 `json:"-"`
-	storageClient storage.Storage        `json:"-"`
-	AccessToken   string                 `json:"access_token,omitempty"`
-	RefreshToken  string                 `json:"refresh_token,omitempty"`
-	ExpiresIn     time.Time              `json:"expires_in,omitempty"`
-	IDToken       string                 `json:"id_token,omitempty"`
-	Sub           string                 `json:"sub,omitempty"`
-	Email         string                 `json:"email,omitempty"`
-	Username      string                 `json:"username,omitempty"`
-	Claims        map[string]interface{} `json:"claims,omitempty"`
-	State         string                 `json:"state,omitempty"`
-}
-
-// NewSession returns a new, empty session object with default values.
-func NewSession(ctx context.Context, client storage.Storage) (Session, error) {
-	id, err := newUniqueSessionID(ctx, client)
-	if err != nil {
-		return Session{}, err
-	}
-
-	return Session{
-		sessionID:     id,
-		storageClient: client,
-		AccessToken:   "",
-		RefreshToken:  "",
-		ExpiresIn:     time.Now().Add(DefaultSessionTTL), // Default expiration time
-		IDToken:       "",
-		Username:      "",
-		Email:         "",
-		Claims:        make(map[string]interface{}),
-		State:         "",
-	}, nil
-}
-
-// String returns the JSON string representation of the session.
-func (s *Session) String() string {
+// String returns the JSON string representation of the UserSession.
+func (s *UserSession) String() string {
 	data, _ := json.Marshal(s)
 	return string(data)
 }
@@ -68,86 +41,122 @@ func (s *Session) String() string {
 // IsAuthenticated checks if the session is authenticated.
 // A session is considered authenticated if the access token is not empty and
 // the session has not expired.
-func (s *Session) IsAuthenticated() bool {
+func (s *UserSession) IsAuthenticated() bool {
 	return s.AccessToken != "" && s.ExpiresIn.After(time.Now())
 }
 
-// SetID sets the unique identifier for the session.
-func (s *Session) SetID(id string) {
-	s.sessionID = id
+// GetUserSession retrieves a user session from the storage backend using the session ID.
+func GetUserSession(ctx context.Context, client storage.Storage, sid string) (*UserSession, error) {
+	var userSession UserSession
+	if err := getSessionFromStorage(ctx, client, usid(sid), &userSession); err != nil {
+		return nil, err
+	}
+	return &userSession, nil
 }
 
-// GetID returns the unique identifier for the session.
-func (s *Session) GetID() string {
-	return s.sessionID
-}
-
-// Save saves the session to the storage backend.
-func (s *Session) Save(ctx context.Context) error {
-	if s.storageClient == nil {
+// SetUserSession saves a user session to the storage backend using the session ID.
+func SetUserSession(ctx context.Context, client storage.Storage, sid string, us UserSession) error {
+	if client == nil {
 		return fmt.Errorf("storage client is not set")
 	}
 
-	data, err := json.Marshal(s)
+	data, err := json.Marshal(us)
 	if err != nil {
 		return fmt.Errorf("failed to marshal session data: %w", err)
 	}
 
-	ok, err := s.storageClient.Exists(ctx, s.sessionID)
-	if err != nil {
-		return fmt.Errorf("failed to check session existence: %w", err)
-	} else if ok {
-		if err := s.storageClient.Update(ctx, s.sessionID, string(data)); err != nil {
-			return fmt.Errorf("failed to update session data: %w", err)
-		}
+	var ttl time.Duration
+	if us.ExpiresIn.Equal(time.Time{}) {
+		us.ExpiresIn = time.Now().Add(DefaultSessionTTL) // Set default expiration if not set
+		ttl = DefaultSessionTTL
 	} else {
-		ttl := DefaultSessionTTL
-		if s.ExpiresIn != (time.Time{}) {
-			ttl = time.Until(s.ExpiresIn)
-		}
+		ttl = time.Until(us.ExpiresIn)
+	}
 
-		// If the session does not exist, create a new one.
-		if err := s.storageClient.SetWithTTL(ctx, s.sessionID, string(data), ttl); err != nil {
-			return fmt.Errorf("failed to create new session data: %w", err)
-		}
+	if err := client.SetWithTTL(ctx, usid(sid), string(data), ttl); err != nil {
+		return fmt.Errorf("failed to set session in storage: %w", err)
 	}
 
 	return nil
 }
 
-// Load retrieves the session data from the storage backend using the session ID.
-func (s *Session) Load(ctx context.Context, sessionID string) error {
-	if s.storageClient == nil {
+// UpdateUserSession updates an existing user session in the storage backend.
+func UpdateUserSession(ctx context.Context, client storage.Storage, sid string, us UserSession) error {
+	if client == nil {
 		return fmt.Errorf("storage client is not set")
 	}
 
-	data, err := s.storageClient.Get(ctx, sessionID)
+	data, err := json.Marshal(us)
 	if err != nil {
-		return fmt.Errorf("failed to retrive session from stroage: %w", err)
+		return fmt.Errorf("failed to marshal session data: %w", err)
 	}
 
-	var sessionData Session
-	err = json.Unmarshal([]byte(data), &sessionData)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal session data: %w", err)
+	if err := client.Update(ctx, usid(sid), string(data)); err != nil {
+		return fmt.Errorf("failed to update session in storage: %w", err)
 	}
-
-	s.sessionID = sessionID // Set the session ID after loading data
-
-	s.AccessToken = sessionData.AccessToken
-	s.RefreshToken = sessionData.RefreshToken
-	s.ExpiresIn = sessionData.ExpiresIn
-	s.IDToken = sessionData.IDToken
-	s.Username = sessionData.Username
-	s.Email = sessionData.Email
-	s.Claims = sessionData.Claims
-	s.State = sessionData.State
 
 	return nil
 }
 
-// newUniqueSessionID generates a new unique session ID.
-func newUniqueSessionID(ctx context.Context, client storage.Storage) (string, error) {
+// AuthSession represents a short term authentication session flash entry.
+type AuthSession struct {
+	State   string   `json:"state,omitempty"`
+	OrigURL *url.URL `json:"orig_url,omitempty"`
+}
+
+// String returns the JSON string representation of the AuthSession.
+func (s *AuthSession) String() string {
+	data, _ := json.Marshal(s)
+	return string(data)
+}
+
+// GetAuthSession retrieves an authentication session from the storage backend using the session ID.
+func GetAuthSession(ctx context.Context, client storage.Storage, sid string) (*AuthSession, error) {
+	var authSession AuthSession
+	if err := getSessionFromStorage(ctx, client, asid(sid), &authSession); err != nil {
+		return nil, err
+	}
+	return &authSession, nil
+}
+
+// SetAuthSession saves an authentication session to the storage backend using the session ID.
+func SetAuthSession(ctx context.Context, client storage.Storage, sid string, as AuthSession) error {
+	if client == nil {
+		return fmt.Errorf("storage client is not set")
+	}
+
+	data, err := json.Marshal(as)
+	if err != nil {
+		return fmt.Errorf("failed to marshal session data: %w", err)
+	}
+
+	if err := client.SetWithTTL(ctx, asid(sid), string(data), AuthSessionTTL); err != nil {
+		return fmt.Errorf("failed to set session in storage: %w", err)
+	}
+
+	return nil
+}
+
+// NewAuthSessionID generates a new unique session ID for authentication sessions.
+func NewAuthSessionID(ctx context.Context, client storage.Storage) (string, error) {
+	newSessionID, err := getSessionID(ctx, client)
+	if err != nil {
+		return "", fmt.Errorf("failed to create new auth session id: %w", err)
+	}
+	return newSessionID, nil
+}
+
+// NewUserSessionID generates a new unique session ID for user sessions.
+func NewUserSessionID(ctx context.Context, client storage.Storage) (string, error) {
+	newSessionID, err := getSessionID(ctx, client)
+	if err != nil {
+		return "", fmt.Errorf("failed to create new user session id: %w", err)
+	}
+	return newSessionID, nil
+}
+
+// getSessionID generates a new unique session ID.
+func getSessionID(ctx context.Context, client storage.Storage) (string, error) {
 	for i := 0; i < 10; i++ {
 		newSessionID := uuid.New().String()
 		if ok, err := client.Exists(ctx, newSessionID); err != nil {
@@ -158,4 +167,32 @@ func newUniqueSessionID(ctx context.Context, client storage.Storage) (string, er
 	}
 
 	return "", fmt.Errorf("failed to create a new unique session id after multiple attempts")
+}
+
+// getSessionFromStorage is a helper to load and unmarshal a session from storage.
+func getSessionFromStorage(ctx context.Context, client storage.Storage, sid string, target interface{}) error {
+	if client == nil {
+		return fmt.Errorf("storage client is not set")
+	}
+
+	data, err := client.Get(ctx, sid)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve session from storage: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(data), target); err != nil {
+		return fmt.Errorf("failed to unmarshal session data: %w", err)
+	}
+
+	return nil
+}
+
+// Utility functions to format session IDs for user sessions.
+func usid(sid string) string {
+	return fmt.Sprintf("US-%s", sid)
+}
+
+// Utility function to format session IDs for auth sessions.
+func asid(sid string) string {
+	return fmt.Sprintf("AS-%s", sid)
 }
