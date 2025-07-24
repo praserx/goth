@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/praserx/aegis/pkg/logger"
+	"github.com/praserx/aegis/pkg/session"
+	"github.com/praserx/aegis/pkg/storage"
 )
 
 // mockResponseWriter is a mock implementation of http.ResponseWriter for testing.
@@ -46,7 +48,19 @@ func TestAccessLogMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 	})
 
-	middleware := AccessLogMiddleware()
+	store, err := storage.NewInMemoryStore()
+	if err != nil {
+		t.Fatalf("failed to create in-memory store: %v", err)
+	}
+	opts := session.CookieOptions{
+		SessionCookieName:  "aegis-session",
+		TrackingCookieName: "aegis-track",
+		AuthCookieName:     "aegis-auth",
+		MaxAge:             3600,
+		Secure:             false,
+		SameSite:           "Lax",
+	}
+	middleware := AccessLogMiddleware(store, opts)
 	wrappedHandler := middleware(handler)
 
 	// Create a test request and response recorder.
@@ -109,7 +123,19 @@ func TestLogMessageFormat(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	middleware := AccessLogMiddleware()
+	store, err := storage.NewInMemoryStore()
+	if err != nil {
+		t.Fatalf("failed to create in-memory store: %v", err)
+	}
+	opts := session.CookieOptions{
+		SessionCookieName:  "aegis-session",
+		TrackingCookieName: "aegis-track",
+		AuthCookieName:     "aegis-auth",
+		MaxAge:             3600,
+		Secure:             false,
+		SameSite:           "Lax",
+	}
+	middleware := AccessLogMiddleware(store, opts)
 	wrappedHandler := middleware(handler)
 
 	req := httptest.NewRequest("POST", "/api/v1/resource", nil)

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/praserx/aegis/pkg/logger"
+	"github.com/praserx/aegis/pkg/session"
+	"github.com/praserx/aegis/pkg/storage"
 )
 
 // responseWriter is a wrapper for http.ResponseWriter to capture the status code
@@ -66,7 +68,7 @@ func (rw *responseWriter) Push(target string, opts *http.PushOptions) error {
 
 // AccessLogMiddleware logs all access requests in ECS/JSON format.
 // It captures the response status code and latency.
-func AccessLogMiddleware() Middleware {
+func AccessLogMiddleware(c storage.Storage, opts session.CookieOptions) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
