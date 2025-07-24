@@ -1,8 +1,11 @@
 # Use a small base image that includes a shell and package manager
-FROM alpine:latest
+FROM python:3.9-alpine
 
 # Install curl and jq for the entrypoint script
 RUN apk --no-cache add curl jq
+
+# Install Python and pip for the aegis binary dependencies
+RUN pip install requests
 
 # Copy the pre-built aegis binary from the project root.
 # The build context for this Dockerfile is the project root.
@@ -10,6 +13,9 @@ COPY ./bin/aegis /aegis
 
 # Copy the entrypoint script from its location in the project.
 COPY ./entrypoint.sh /entrypoint.sh
+
+# Copy the setup.py file to the container
+COPY ./setup.py /setup.py
 
 # Copy the users.txt file to the container
 COPY ./users.txt /users.txt
