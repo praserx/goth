@@ -1,6 +1,6 @@
 module github.com/praserx/goth
 
-go 1.23.1
+go 1.24
 
 require (
 	github.com/coreos/go-oidc/v3 v3.14.1
