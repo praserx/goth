@@ -6,4 +6,4 @@
 //   - Resource authorization
 //
 // All core logic is designed to be composable and testable.
-package aegis
+package proxy

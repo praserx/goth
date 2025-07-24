@@ -1,4 +1,4 @@
-package aegis
+package proxy
 
 import (
 	"net/url"
