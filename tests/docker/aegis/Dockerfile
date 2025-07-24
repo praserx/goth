@@ -11,6 +11,9 @@ COPY ./bin/aegis /aegis
 # Copy the entrypoint script from its location in the project.
 COPY ./entrypoint.sh /entrypoint.sh
 
+# Copy the users.txt file to the container
+COPY ./users.txt /users.txt
+
 # Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
 

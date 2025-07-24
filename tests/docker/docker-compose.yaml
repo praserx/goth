@@ -7,18 +7,22 @@ services:
       dockerfile: Dockerfile # Use the new Dockerfile with entrypoint
     container_name: aegis
     ports:
-      - "8000:8080"
+      - "8000:8000"
     command: [] # Command is executed by the entrypoint script
     environment:
       # --- Aegis Application Configuration ---
+      - WEB_LISTEN_HTTP=:8000
+      - WEB_COOKIE_SECURE=false # Set to true if using HTTPS
+      - WEB_COOKIE_SAME_SITE=lax
+
       - PROXY_UPSTREAM_URL=http://resource-server:80
-      - OIDC_DISCOVERY_URL=http://keycloak:8080/realms/test/.well-known/openid-configuration # Use internal port 8080
+      
+      - OIDC_DISCOVERY_URL=http://keycloak:8080/realms/test/.well-known/openid-configuration
       - OIDC_CLIENT_ID=application # Must match TARGET_CLIENT_ID
       - OIDC_CLIENT_SECRET= # This is now set by the entrypoint script
       - OIDC_TLS_SKIP_VERIFY=true
+      - OIDC_CALLBACK_PATH=http://localhost:8000/auth/callback # Callback URL for OIDC
       - REDIS_URL=redis:6379 # Address for the Redis service
-
-      - WEB_COOKIE_SECURE=false # Set to true if using HTTPS
 
       # --- Entrypoint Script Configuration ---
       - KEYCLOAK_URL=http://keycloak:8080 # Use the internal port for container-to-container communication
@@ -56,8 +60,8 @@ services:
     volumes:
       - ./keycloak-config:/opt/keycloak/data/import # For realm import
     ports:
-      - "18080:8080" # Expose Keycloak on port 9090
-      - "19000:9000" # Expose the health check on port 9099
+      - "8080:8080" # Expose Keycloak on port 9090
+      - "9000:9000" # Expose the health check on port 9099
     restart: unless-stopped
     networks:
       - aegis-net

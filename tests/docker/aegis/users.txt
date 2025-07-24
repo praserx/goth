@@ -1,0 +1,2 @@
+jdoe:password:jdoe@example.com:John:Doe
+mwazovski:password:mwazovski@example.com:Mike:Wazovski

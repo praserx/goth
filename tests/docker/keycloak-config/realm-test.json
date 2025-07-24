@@ -629,7 +629,7 @@
                 "acr.loa.map": "{}",
                 "request.object.encryption.enc": "any",
                 "display.on.consent.screen": "false",
-                "pkce.code.challenge.method": "S256",
+                "pkce.code.challenge.method": "",
                 "token.response.type.bearer.lower-case": "false"
             },
             "authenticationFlowBindingOverrides": {},
@@ -639,14 +639,22 @@
             "optionalClientScopes": ["address", "phone", "organization", "offline_access", "microprofile-jwt"],
             "authorizationSettings": {
                 "allowRemoteResourceManagement": true,
-                "policyEnforcementMode": "DISABLED",
+                "policyEnforcementMode": "ENFORCING",
                 "resources": [
                     {
-                        "name": "/public",
+                        "name": "/",
                         "ownerManagedAccess": false,
-                        "displayName": "/public",
+                        "displayName": "/",
                         "attributes": {},
-                        "uris": ["/public/*"],
+                        "uris": ["/public/*", "/*"],
+                        "icon_uri": ""
+                    },
+                    {
+                        "name": "/protected",
+                        "ownerManagedAccess": false,
+                        "displayName": "/protected",
+                        "attributes": {},
+                        "uris": ["/protected/*", "/protected"],
                         "icon_uri": ""
                     }
                 ],
@@ -661,14 +669,45 @@
                         }
                     },
                     {
+                        "name": "Restricted Access Policy",
+                        "description": "",
+                        "type": "role",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "fetchRoles": "false",
+                            "roles": "[{\"id\":\"application/system-admin\",\"required\":true},{\"id\":\"application/domain-admin\",\"required\":true}]"
+                        }
+                    },
+                    {
+                        "name": "Public Access Policy (Client)",
+                        "type": "client",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "clients": "[\"application\"]"
+                        }
+                    },
+                    {
                         "name": "Public Access Permission",
                         "description": "",
                         "type": "resource",
                         "logic": "POSITIVE",
                         "decisionStrategy": "AFFIRMATIVE",
                         "config": {
-                            "resources": "[\"/public\"]",
-                            "applyPolicies": "[\"Public Access Policy\"]"
+                            "resources": "[\"/\"]",
+                            "applyPolicies": "[\"Public Access Policy\",\"Public Access Policy (Client)\"]"
+                        }
+                    },
+                    {
+                        "name": "Restricted Access Permission",
+                        "description": "",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "resources": "[\"/protected\"]",
+                            "applyPolicies": "[\"Restricted Access Policy\"]"
                         }
                     }
                 ],
