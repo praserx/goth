@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// WriteErrorResponse writes an error response in JSON format if the request
+// ErrorResponse writes an error response in JSON format if the request
 // accepts JSON, otherwise it writes a plain text error message.
-func WriteErrorResponse(w http.ResponseWriter, r *http.Request, status int, msg string) {
+func ErrorResponse(w http.ResponseWriter, r *http.Request, status int, msg string) {
 	accept := r.Header.Get("Accept")
 	if accept != "" && (accept == "application/json" || accept == "*/*" || containsJSON(accept)) {
 		w.Header().Set("Content-Type", "application/json")
