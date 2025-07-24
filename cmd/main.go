@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/praserx/aegis/pkg/aegis"
 	"github.com/praserx/aegis/pkg/logger"
+	"github.com/praserx/aegis/pkg/proxy"
 	"github.com/urfave/cli/v3"
 )
 
@@ -26,18 +26,19 @@ func main() {
 			flagWebListenHTTPS,
 			flagWebTLSCert,
 			flagWebTLSKey,
-			flagWebCookieName,
-			flagWebCookieMaxAge,
-			flagWebCookieHTTPOnly,
-			flagWebCookieSecure,
-			flagWebCookieSameSite,
-			flagOIDCTLSSkipVerify,
+			flagWebSessionCookieName,
+			flagWebTrackingCookieName,
+			flagWebAuthCookieName,
+			flagWebSessionCookieMaxAge,
+			flagWebSecureCookie,
+			flagWebSessionCookieSameSite,
 			flagOIDCDiscoveryURL,
 			flagOIDCClientID,
 			flagOIDCClientSecret,
 			flagOIDCLoginPath,
 			flagOIDCLogoutPath,
 			flagOIDCCallbackPath,
+			flagOIDCTLSSkipVerify,
 			flagProxyUpstreamURL,
 			flagStorageRedisEnabled,
 			flagStorageRedisURL,
@@ -64,11 +65,11 @@ func main() {
 
 			cookieOptions := NewCookieOptions(cmd)
 
-			proxy, err := aegis.New(
-				aegis.WithUpstreamURL(upstreamURL),
-				aegis.WithProvider(oidcProvider),
-				aegis.WithSessionManager(sessionManager),
-				aegis.WithCookieOptions(cookieOptions),
+			proxy, err := proxy.New(
+				proxy.WithUpstreamURL(upstreamURL),
+				proxy.WithProvider(oidcProvider),
+				proxy.WithSessionManager(sessionManager),
+				proxy.WithCookieOptions(cookieOptions),
 			)
 			if err != nil {
 				return fmt.Errorf("failed to create aegis proxy: %w", err)

@@ -40,11 +40,12 @@ func NewSessionStorage(ctx context.Context, cmd *cli.Command) (storage.Storage, 
 // NewCookieOptions creates session cookie options based on command line flags.
 func NewCookieOptions(cmd *cli.Command) session.CookieOptions {
 	return session.CookieOptions{
-		Name:     cmd.String("web.cookie.name"),
-		MaxAge:   cmd.Int("web.cookie.max-age"),
-		Secure:   cmd.Bool("web.cookie.secure"),
-		HttpOnly: cmd.Bool("web.cookie.http-only"),
-		SameSite: cmd.String("web.cookie.same-site"),
+		SessionCookieName:  cmd.String("web.session-cookie-name"),
+		TrackingCookieName: cmd.String("web.tracking-cookie-name"),
+		AuthCookieName:     cmd.String("web.auth-cookie-name"),
+		MaxAge:             cmd.Int("web.session-cookie-max-age"),
+		Secure:             cmd.Bool("web.secure-cookie"),
+		SameSite:           cmd.String("web.session-cookie-same-site"),
 	}
 }
 
@@ -84,8 +85,8 @@ func NewOIDCProvider(ctx context.Context, cmd *cli.Command) (provider.Provider, 
 		provider.WithClientSecret(cmd.String("oidc.client-secret")),
 	}
 
-	if cmd.String("oidc.redirect-url") != "" {
-		opts = append(opts, provider.WithRedirectURL(cmd.String("oidc.redirect-url")))
+	if cmd.String("oidc.callback-path") != "" {
+		opts = append(opts, provider.WithRedirectURL(cmd.String("oidc.callback-path")))
 	} else {
 		opts = append(opts, provider.WithRedirectURL(buildRedirectURL(cmd))) // Helper function to build redirect URL
 	}

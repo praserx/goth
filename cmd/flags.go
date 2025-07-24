@@ -56,17 +56,33 @@ var flagWebTLSKey = &cli.StringFlag{
 	Sources:  cli.EnvVars("WEB_TLS_KEY"),
 }
 
-// flagWebSessionName is a CLI flag for specifying the name used for session management.
-var flagWebCookieName = &cli.StringFlag{
-	Name:    "web.cookie-name",
+// flagWebSessionCookieName is a CLI flag for specifying the name of the session cookie.
+var flagWebSessionCookieName = &cli.StringFlag{
+	Name:    "web.session-cookie-name",
 	Usage:   "Name for session cookie",
-	Value:   "AEGIS_SESSION", // Default session cookie name
-	Sources: cli.EnvVars("WEB_COOKIE_NAME"),
+	Value:   "GOTH_SESSION_ID", // Default session cookie name
+	Sources: cli.EnvVars("WEB_SESSION_COOKIE_NAME"),
+}
+
+// flagTrackingCookieName is a CLI flag for specifying the name of the tracking cookie.
+var flagWebTrackingCookieName = &cli.StringFlag{
+	Name:    "web.tracking-cookie-name",
+	Usage:   "Name for tracking cookie",
+	Value:   "GOTH_TRACKING_ID", // Default tracking cookie name
+	Sources: cli.EnvVars("WEB_TRACKING_COOKIE_NAME"),
+}
+
+// flagWebAuthCookieName is a CLI flag for specifying the name of the authentication cookie.
+var flagWebAuthCookieName = &cli.StringFlag{
+	Name:    "web.auth-cookie-name",
+	Usage:   "Name for authentication cookie",
+	Value:   "GOTH_AUTH_ID", // Default authentication cookie name
+	Sources: cli.EnvVars("WEB_AUTH_COOKIE_NAME"),
 }
 
 // flagWebCookieMaxAge is a CLI flag for specifying the maximum age of session cookies.
-var flagWebCookieMaxAge = &cli.IntFlag{
-	Name:     "web.cookie-max-age",
+var flagWebSessionCookieMaxAge = &cli.IntFlag{
+	Name:     "web.session-cookie-max-age",
 	Usage:    "Maximum age for session cookies in seconds (default is 86400 seconds, or 24 hours)",
 	Value:    86400, // Default to 24 hours
 	Required: false,
@@ -74,30 +90,21 @@ var flagWebCookieMaxAge = &cli.IntFlag{
 }
 
 // flagWebCookieSecure is a CLI flag for specifying whether session cookies should be secure.
-var flagWebCookieSecure = &cli.BoolFlag{
-	Name:     "web.cookie-secure",
-	Usage:    "Set session cookies to be secure (only sent over HTTPS)",
+var flagWebSecureCookie = &cli.BoolFlag{
+	Name:     "web.secure-cookie",
+	Usage:    "Set secure flag for cookies (only sent over HTTPS)",
 	Value:    true, // Default to true for security
 	Required: false,
-	Sources:  cli.EnvVars("WEB_COOKIE_SECURE"),
+	Sources:  cli.EnvVars("WEB_SECURE_COOKIE"),
 }
 
-// flagWebCookieHTTPOnly is a CLI flag for specifying whether session cookies should be HTTP-only.
-var flagWebCookieHTTPOnly = &cli.BoolFlag{
-	Name:     "web.cookie-http-only",
-	Usage:    "Set session cookies to be HTTP-only (not accessible via JavaScript)",
-	Value:    true, // Default to true for security
-	Required: false,
-	Sources:  cli.EnvVars("WEB_COOKIE_HTTP_ONLY"),
-}
-
-// flagWebCookieSameSite is a CLI flag for specifying the SameSite attribute for session cookies.
-var flagWebCookieSameSite = &cli.StringFlag{
-	Name:     "web.cookie-same-site",
+// flagWebSessionCookieSameSite is a CLI flag for specifying the SameSite attribute for session cookies.
+var flagWebSessionCookieSameSite = &cli.StringFlag{
+	Name:     "web.session-cookie-same-site",
 	Usage:    "SameSite attribute for session cookies (e.g., 'Strict', 'Lax', 'None')",
 	Value:    "Strict", // Default to Lax for compatibility
 	Required: false,
-	Sources:  cli.EnvVars("WEB_COOKIE_SAME_SITE"),
+	Sources:  cli.EnvVars("WEB_SESSION_COOKIE_SAME_SITE"),
 }
 
 // flagOIDCDiscoveryURL is a CLI flag for specifying the OpenID Connect provider URL.
