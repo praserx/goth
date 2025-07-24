@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/praserx/aegis/pkg/session"
 	"golang.org/x/oauth2"
 )
 
@@ -194,8 +193,7 @@ func (p *KeycloakProvider) GetUserInfo(ctx context.Context, token *oauth2.Token)
 
 // AuthorizeAnonymousRequest checks if the unauthenticated user has permission
 // to access the requested resource.
-func (p *KeycloakProvider) AuthorizeAnonymousRequest(ctx context.Context, s session.Session, req *http.Request) (bool, error) {
-	// The resource being requested is the URI path.
+func (p *KeycloakProvider) AuthorizeAnonymousRequest(ctx context.Context, req *http.Request) (bool, error) {
 	permission := req.URL.Path
 
 	formData := url.Values{}
@@ -211,12 +209,58 @@ func (p *KeycloakProvider) AuthorizeAnonymousRequest(ctx context.Context, s sess
 		return false, fmt.Errorf("failed to create token request: %w", err)
 	}
 
-	if s.IsAuthenticated() {
-		tokenReq.Header.Set("Authorization", "Bearer "+s.AccessToken)
-	} else {
-		tokenReq.SetBasicAuth(p.oauthConfig.ClientID, p.oauthConfig.ClientSecret)
-		tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	tokenReq.SetBasicAuth(p.oauthConfig.ClientID, p.oauthConfig.ClientSecret)
+	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := p.httpClient.Do(tokenReq)
+	if err != nil {
+		return false, fmt.Errorf("failed to send token request to keycloak: %w", err)
 	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("failed to read keycloak response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusForbidden {
+			return false, nil
+		}
+		return false, fmt.Errorf("keycloak returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var decisionResponse struct {
+		Result bool `json:"result"`
+	}
+	if err := json.Unmarshal(body, &decisionResponse); err != nil {
+		return false, fmt.Errorf("failed to unmarshal keycloak decision response: %w", err)
+	}
+
+	return decisionResponse.Result, nil
+}
+
+// AuthorizeRequest checks if the authenticated user has permission to access the requested resource.
+// The user's access token must be provided.
+func (p *KeycloakProvider) AuthorizeRequest(ctx context.Context, req *http.Request, accessToken string) (bool, error) {
+	permission := req.URL.Path
+
+	formData := url.Values{}
+	formData.Set("grant_type", "urn:ietf:params:oauth:grant-type:uma-ticket")
+	formData.Set("audience", p.oauthConfig.ClientID)
+	formData.Set("response_mode", "decision")
+	formData.Set("permission", permission)
+	formData.Set("permission_resource_format", "uri")
+	formData.Set("permission_resource_matching_uri", "true")
+
+	tokenReq, err := http.NewRequestWithContext(ctx, http.MethodPost, p.oauthConfig.Endpoint.TokenURL, strings.NewReader(formData.Encode()))
+	if err != nil {
+		return false, fmt.Errorf("failed to create token request: %w", err)
+	}
+
+	// Use Bearer token for user authentication
+	tokenReq.Header.Set("Authorization", "Bearer "+accessToken)
+	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := p.httpClient.Do(tokenReq)
 	if err != nil {

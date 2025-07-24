@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/praserx/aegis/pkg/session"
 	"golang.org/x/oauth2"
 )
 
@@ -43,7 +42,12 @@ type Provider interface {
 	// AuthorizeAnonymousRequest checks if the unauthenticated user has permission
 	// to access the requested resource. This is useful for public resources that
 	// do not require a logged-in user but still need authorization checks.
-	AuthorizeAnonymousRequest(ctx context.Context, s session.Session, req *http.Request) (bool, error)
+	AuthorizeAnonymousRequest(ctx context.Context, req *http.Request) (bool, error)
+
+	// AuthorizeRequest checks if the authenticated user has permission to access
+	// the requested resource. This is typically used for protected resources that
+	// require a logged-in user.
+	AuthorizeRequest(ctx context.Context, req *http.Request, accessToken string) (bool, error)
 }
 
 // Options holds the configuration options for creating a new Identity
