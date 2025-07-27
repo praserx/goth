@@ -195,9 +195,38 @@ var flagStorageRedisURL = &cli.StringFlag{
 // flagAuthPolicyMode is a CLI flag for specifying the policy mode.
 // There are two modes: "local" for local policy management and "delegated"
 // for using an external policy service (e.g., Keycloak).
+
 var flagAuthPolicyMode = &cli.StringFlag{
 	Name:    "auth.mode",
 	Usage:   "Policy mode: 'local' for local policy, 'delegated' for delegated (e.g., Keycloak) policies",
 	Value:   "local",
 	Sources: cli.EnvVars("AUTH_MODE"),
+}
+
+// GetAllFlags returns all CLI flags for the application.
+func GetAllFlags() []cli.Flag {
+	return []cli.Flag{
+		flagVerbose,
+		flagWebListenHTTP,
+		flagWebListenHTTPS,
+		flagWebTLSCert,
+		flagWebTLSKey,
+		flagWebSessionCookieName,
+		flagWebTrackingCookieName,
+		flagWebAuthCookieName,
+		flagWebSessionCookieMaxAge,
+		flagWebSecureCookie,
+		flagWebSessionCookieSameSite,
+		flagOIDCDiscoveryURL,
+		flagOIDCClientID,
+		flagOIDCClientSecret,
+		flagOIDCLoginPath,
+		flagOIDCLogoutPath,
+		flagOIDCCallbackPath,
+		flagOIDCTLSSkipVerify,
+		flagProxyUpstreamURL,
+		flagStorageRedisEnabled,
+		flagStorageRedisURL,
+		flagAuthPolicyMode,
+	}
 }

@@ -20,34 +20,11 @@ import (
 // main is the entry point for the goth proxy application.
 // It sets up the CLI command and runs the proxy server.
 func main() {
-	// Define the CLI command and its flags.
+	// Define the CLI command and its flags using GetAllFlags().
 	cmd := &cli.Command{
-		Name:  "goth",
-		Usage: "A lightweight, security-focused authorization proxy",
-		Flags: []cli.Flag{
-			flagVerbose,
-			flagWebListenHTTP,
-			flagWebListenHTTPS,
-			flagWebTLSCert,
-			flagWebTLSKey,
-			flagWebSessionCookieName,
-			flagWebTrackingCookieName,
-			flagWebAuthCookieName,
-			flagWebSessionCookieMaxAge,
-			flagWebSecureCookie,
-			flagWebSessionCookieSameSite,
-			flagOIDCDiscoveryURL,
-			flagOIDCClientID,
-			flagOIDCClientSecret,
-			flagOIDCLoginPath,
-			flagOIDCLogoutPath,
-			flagOIDCCallbackPath,
-			flagOIDCTLSSkipVerify,
-			flagProxyUpstreamURL,
-			flagStorageRedisEnabled,
-			flagStorageRedisURL,
-			flagAuthPolicyMode,
-		},
+		Name:                   "goth",
+		Usage:                  "A lightweight, security-focused authorization proxy",
+		Flags:                  GetAllFlags(),
 		UseShortOptionHandling: true,
 		Action:                 runGothProxy,
 	}
