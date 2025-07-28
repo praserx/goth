@@ -34,7 +34,16 @@ func (rw *responseWriter) Header() http.Header {
 	return rw.ResponseWriter.Header()
 }
 
-// Write captures the response body and allows the status code to be set.
+// Write writes the data to the connection as part of an HTTP reply.
+// If WriteHeader has not yet been called, Write calls WriteHeader(http.StatusOK) before writing the data.
+func (rw *responseWriter) Write(b []byte) (int, error) {
+	if rw.statusCode == 0 {
+		rw.WriteHeader(http.StatusOK)
+	}
+	return rw.ResponseWriter.Write(b)
+}
+
+// WriteHeader captures the response status code and delegates to the underlying ResponseWriter.
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
@@ -73,6 +82,14 @@ func AccessLogMiddleware(c storage.Storage, opts session.CookieOptions) Middlewa
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
+			// TODO: Extract request ID from tracking cookie (if present) for logging.
+			// trackingCookie, _ := r.Cookie(opts.TrackingCookieName)
+			// requestID := ...
+
+			// TODO: Lookup active user from session storage (if logged in) and log user info.
+			// sessionID := ...
+			// user := ...
+
 			// Wrap the original ResponseWriter to capture the status code.
 			rw := newResponseWriter(w)
 
@@ -84,6 +101,7 @@ func AccessLogMiddleware(c storage.Storage, opts session.CookieOptions) Middlewa
 				r,
 				rw.statusCode,
 				time.Since(start),
+				// Optionally: requestID, user
 			)
 		})
 	}
