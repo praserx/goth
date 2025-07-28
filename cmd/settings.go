@@ -44,9 +44,9 @@ func NewCookieOptions(cmd *cli.Command) session.CookieOptions {
 		SessionCookieName:  cmd.String("web.session-cookie-name"),
 		TrackingCookieName: cmd.String("web.tracking-cookie-name"),
 		AuthCookieName:     cmd.String("web.auth-cookie-name"),
-		MaxAge:             cmd.Int("web.session-cookie-max-age"),
-		Secure:             cmd.Bool("web.secure-cookie"),
-		SameSite:           cmd.String("web.session-cookie-same-site"),
+		MaxAge:             cmd.Int("web.cookie-max-age"),
+		Secure:             cmd.Bool("web.cookie-secure"),
+		SameSite:           cmd.String("web.cookie-same-site"),
 	}
 }
 

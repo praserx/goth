@@ -81,8 +81,8 @@ var flagWebAuthCookieName = &cli.StringFlag{
 }
 
 // flagWebCookieMaxAge is a CLI flag for specifying the maximum age of session cookies.
-var flagWebSessionCookieMaxAge = &cli.IntFlag{
-	Name:     "web.session-cookie-max-age",
+var flagWebCookieMaxAge = &cli.IntFlag{
+	Name:     "web.cookie-max-age",
 	Usage:    "Maximum age for session cookies in seconds (default is 86400 seconds, or 24 hours)",
 	Value:    86400, // Default to 24 hours
 	Required: false,
@@ -90,21 +90,21 @@ var flagWebSessionCookieMaxAge = &cli.IntFlag{
 }
 
 // flagWebCookieSecure is a CLI flag for specifying whether session cookies should be secure.
-var flagWebSecureCookie = &cli.BoolFlag{
-	Name:     "web.secure-cookie",
+var flagWebCookieSecure = &cli.BoolFlag{
+	Name:     "web.cookie-secure",
 	Usage:    "Set secure flag for cookies (only sent over HTTPS)",
 	Value:    true, // Default to true for security
 	Required: false,
-	Sources:  cli.EnvVars("WEB_SECURE_COOKIE"),
+	Sources:  cli.EnvVars("WEB_COOKIE_SECURE"),
 }
 
-// flagWebSessionCookieSameSite is a CLI flag for specifying the SameSite attribute for session cookies.
-var flagWebSessionCookieSameSite = &cli.StringFlag{
+// flagWebCookieSameSite is a CLI flag for specifying the SameSite attribute for session cookies.
+var flagWebCookieSameSite = &cli.StringFlag{
 	Name:     "web.session-cookie-same-site",
 	Usage:    "SameSite attribute for session cookies (e.g., 'Strict', 'Lax', 'None')",
 	Value:    "Strict", // Default to Lax for compatibility
 	Required: false,
-	Sources:  cli.EnvVars("WEB_SESSION_COOKIE_SAME_SITE"),
+	Sources:  cli.EnvVars("WEB_COOKIE_SAME_SITE"),
 }
 
 // flagOIDCDiscoveryURL is a CLI flag for specifying the OpenID Connect provider URL.
@@ -214,9 +214,9 @@ func GetAllFlags() []cli.Flag {
 		flagWebSessionCookieName,
 		flagWebTrackingCookieName,
 		flagWebAuthCookieName,
-		flagWebSessionCookieMaxAge,
-		flagWebSecureCookie,
-		flagWebSessionCookieSameSite,
+		flagWebCookieMaxAge,
+		flagWebCookieSecure,
+		flagWebCookieSameSite,
 		flagOIDCDiscoveryURL,
 		flagOIDCClientID,
 		flagOIDCClientSecret,
