@@ -94,7 +94,7 @@ func New(options ...func(*Options)) (*Proxy, error) {
 		middleware.ContextMiddleware(opts.CookieOptions),
 		middleware.AccessLogMiddleware(opts.SessionStorage, opts.CookieOptions),
 		middleware.AuthorizationMiddleware(opts.Provider, opts.SessionStorage, opts.CookieOptions),
-		middleware.Proxy(opts.UpstreamURL),
+		middleware.ReverseProxyMiddleware(opts.UpstreamURL),
 	)(http.NotFoundHandler()))
 
 	return &Proxy{

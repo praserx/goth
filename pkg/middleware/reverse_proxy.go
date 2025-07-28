@@ -9,9 +9,9 @@ import (
 	"github.com/praserx/goth/pkg/logger"
 )
 
-// Proxy returns a middleware that forwards requests to the given target URL.
+// ReverseProxyMiddleware returns a middleware that forwards requests to the given target URL.
 // This middleware terminates the chain and does not call the next handler.
-func Proxy(target *url.URL) Middleware {
+func ReverseProxyMiddleware(target *url.URL) Middleware {
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
 	// Custom error handler for better logging
