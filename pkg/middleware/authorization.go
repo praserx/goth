@@ -28,24 +28,39 @@ const (
 func AuthorizationMiddleware(p provider.Provider, c storage.Storage, opts session.CookieOptions) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userSessionID, handled := getSessionCookieOrHandleError(w, r, opts.SessionCookieName)
-			if handled {
+			if handled := handleAuthorization(w, r, p, c, opts); handled {
 				return
 			}
-
-			if userSessionID == nil || userSessionID.Value == "" {
-				if handleAnonymousRequest(w, r, p, c, opts) {
-					return
-				}
-			} else {
-				if handleAuthenticatedRequest(w, r, c, userSessionID.Value) {
-					return
-				}
-			}
-
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// handleAuthorization contains the main logic for AuthorizationMiddleware.
+// Returns true if the request was handled (response written), false otherwise.
+func handleAuthorization(w http.ResponseWriter, r *http.Request, p provider.Provider, c storage.Storage, opts session.CookieOptions) bool {
+	// Provider nil check
+	if p == nil {
+		logger.Error("authorization provider is not configured")
+		writer.ErrorResponse(w, r, http.StatusInternalServerError, errIntProviderNotConfigured)
+		return true
+	}
+
+	userSessionID, handled := getSessionCookieOrHandleError(w, r, opts.SessionCookieName)
+	if handled {
+		return true
+	}
+
+	if userSessionID == nil || userSessionID.Value == "" {
+		if handleAnonymousRequest(w, r, p, c, opts) {
+			return true
+		}
+	} else if handleAuthenticatedRequest(w, r, c, userSessionID.Value) {
+		return true
+	}
+
+	logger.Infof("authorization passed for %s from %s", r.URL.Path, r.RemoteAddr)
+	return false
 }
 
 // getSessionCookieOrHandleError tries to retrieve the session cookie. If an error occurs (other than no cookie),
@@ -104,21 +119,26 @@ func handleAnonymousRequest(w http.ResponseWriter, r *http.Request, p provider.P
 // handleAuthenticatedRequest processes requests with a valid session cookie.
 // Returns true if the request was handled (response written), false otherwise.
 func handleAuthenticatedRequest(w http.ResponseWriter, r *http.Request, c storage.Storage, sessionID string) bool {
-	logger.Info("authenticated request detected")
+	logger.Infof("authenticated request detected for sessionID=%s, path=%s, remote=%s", sessionID, r.URL.Path, r.RemoteAddr)
 
 	userSession, err := session.GetUserSession(r.Context(), c, sessionID)
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			logger.Infof("user session not found for sessionID=%s", sessionID)
+			writer.ErrorResponse(w, r, http.StatusUnauthorized, errAccessUnauthorized)
+			return true
+		}
 		logger.Error(fmt.Sprintf("error getting user session: %v", err))
 		writer.ErrorResponse(w, r, http.StatusInternalServerError, errIntCannotGetUserSession)
 		return true
 	}
 
 	if userSession == nil {
-		logger.Error("user session not found")
+		logger.Infof("user session is nil for sessionID=%s", sessionID)
 		writer.ErrorResponse(w, r, http.StatusUnauthorized, errAccessUnauthorized)
 		return true
 	}
 
-	// Additional user authorization logic can be added here.
+	// TODO: Add fine-grained user authorization logic here (roles, claims, etc.)
 	return false
 }
