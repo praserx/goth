@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -120,4 +121,84 @@ func (d *dummyProviderDeny) Exchange(ctx context.Context, code string) (*oauth2.
 }
 func (d *dummyProviderDeny) GetUserInfo(ctx context.Context, token *oauth2.Token) (provider.UserInfo, error) {
 	return nil, nil
+}
+
+// --- Proxy-Authorization header tests ---
+type dummyProviderProxyAuth struct {
+	allow    bool
+	authzErr error
+}
+
+func (d *dummyProviderProxyAuth) AuthorizeRequest(_ context.Context, _ *http.Request, token string) (bool, error) {
+	if d.authzErr != nil {
+		return false, d.authzErr
+	}
+	if token == "valid-token" {
+		return d.allow, nil
+	}
+	return false, nil
+}
+func (d *dummyProviderProxyAuth) AuthorizeAnonymousRequest(_ context.Context, _ *http.Request) (bool, error) {
+	return false, nil
+}
+func (d *dummyProviderProxyAuth) GetAuthURL(_ string) string { return "/auth" }
+func (d *dummyProviderProxyAuth) Exchange(_ context.Context, _ string) (*oauth2.Token, error) {
+	return &oauth2.Token{}, nil
+}
+func (d *dummyProviderProxyAuth) GetUserInfo(_ context.Context, _ *oauth2.Token) (provider.UserInfo, error) {
+	return nil, nil
+}
+
+func TestHandleAuthorization_ProxyAuthorizationHeader_Allowed(t *testing.T) {
+	prov := &dummyProviderProxyAuth{allow: true}
+	store, _ := storage.NewInMemoryStore()
+	opts := session.CookieOptions{SessionCookieName: "sid"}
+
+	r := httptest.NewRequest("GET", "/protected", nil)
+	r.Header.Set("Proxy-Authorization", "Bearer valid-token")
+	rw := httptest.NewRecorder()
+
+	handled := handleAuthorization(rw, r, prov, store, opts)
+	if handled {
+		t.Errorf("should not handle response if authorized via Proxy-Authorization header")
+	}
+	if rw.Code != 200 {
+		t.Errorf("expected 200, got %d", rw.Code)
+	}
+}
+
+func TestHandleAuthorization_ProxyAuthorizationHeader_Denied(t *testing.T) {
+	prov := &dummyProviderProxyAuth{allow: false}
+	store, _ := storage.NewInMemoryStore()
+	opts := session.CookieOptions{SessionCookieName: "sid"}
+
+	r := httptest.NewRequest("GET", "/protected", nil)
+	r.Header.Set("Proxy-Authorization", "Bearer valid-token")
+	rw := httptest.NewRecorder()
+
+	handled := handleAuthorization(rw, r, prov, store, opts)
+	if !handled {
+		t.Errorf("should handle response if denied via Proxy-Authorization header")
+	}
+	if rw.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rw.Code)
+	}
+}
+
+func TestHandleAuthorization_ProxyAuthorizationHeader_Error(t *testing.T) {
+	prov := &dummyProviderProxyAuth{allow: false, authzErr: errors.New("fail")}
+	store, _ := storage.NewInMemoryStore()
+	opts := session.CookieOptions{SessionCookieName: "sid"}
+
+	r := httptest.NewRequest("GET", "/protected", nil)
+	r.Header.Set("Proxy-Authorization", "Bearer valid-token")
+	rw := httptest.NewRecorder()
+
+	handled := handleAuthorization(rw, r, prov, store, opts)
+	if !handled {
+		t.Errorf("should handle response if error from provider")
+	}
+	if rw.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", rw.Code)
+	}
 }

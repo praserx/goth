@@ -1,3 +1,4 @@
+// ...existing code...
 package middleware
 
 import (
@@ -46,6 +47,21 @@ func handleAuthorization(w http.ResponseWriter, r *http.Request, p provider.Prov
 		return true
 	}
 
+	// 1. Check Proxy-Authorization header for access token
+	proxyAuth := r.Header.Get("Proxy-Authorization")
+	if proxyAuth != "" {
+		// Expecting format: "Bearer <token>"
+		const prefix = "Bearer "
+		if len(proxyAuth) > len(prefix) && proxyAuth[:len(prefix)] == prefix {
+			accessToken := proxyAuth[len(prefix):]
+			if handled := authorizeAccessToken(w, r, p, accessToken, "Proxy-Authorization"); handled {
+				return true
+			}
+			return false
+		}
+	}
+
+	// 2. Fallback to session cookie
 	userSessionID, handled := getSessionCookieOrHandleError(w, r, opts.SessionCookieName)
 	if handled {
 		return true
@@ -55,7 +71,7 @@ func handleAuthorization(w http.ResponseWriter, r *http.Request, p provider.Prov
 		if handleAnonymousRequest(w, r, p, c, opts) {
 			return true
 		}
-	} else if handleAuthenticatedRequest(w, r, c, userSessionID.Value) {
+	} else if handleAuthenticatedRequest(w, r, p, c, userSessionID.Value) {
 		return true
 	}
 
@@ -118,7 +134,7 @@ func handleAnonymousRequest(w http.ResponseWriter, r *http.Request, p provider.P
 
 // handleAuthenticatedRequest processes requests with a valid session cookie.
 // Returns true if the request was handled (response written), false otherwise.
-func handleAuthenticatedRequest(w http.ResponseWriter, r *http.Request, c storage.Storage, sessionID string) bool {
+func handleAuthenticatedRequest(w http.ResponseWriter, r *http.Request, p provider.Provider, c storage.Storage, sessionID string) bool {
 	logger.Infof("authenticated request detected for sessionID=%s, path=%s, remote=%s", sessionID, r.URL.Path, r.RemoteAddr)
 
 	userSession, err := session.GetUserSession(r.Context(), c, sessionID)
@@ -139,6 +155,26 @@ func handleAuthenticatedRequest(w http.ResponseWriter, r *http.Request, c storag
 		return true
 	}
 
-	// TODO: Add fine-grained user authorization logic here (roles, claims, etc.)
+	// Fine-grained user authorization logic
+	if handled := authorizeAccessToken(w, r, p, userSession.AccessToken, "authenticated session"); handled {
+		return true
+	}
+	return false
+}
+
+// authorizeAccessToken checks access using the provider's AuthorizeRequest and handles errors and responses.
+// Returns true if the request was handled (response written), false otherwise.
+func authorizeAccessToken(w http.ResponseWriter, r *http.Request, p provider.Provider, accessToken, logContext string) bool {
+	allowed, err := p.AuthorizeRequest(r.Context(), r, accessToken)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error authorizing with %s: %v", logContext, err))
+		writer.ErrorResponse(w, r, http.StatusInternalServerError, errIntAccessVerification)
+		return true
+	}
+	if !allowed {
+		writer.ErrorResponse(w, r, http.StatusForbidden, errAccessDenied)
+		return true
+	}
+	logger.Infof("authorization passed via %s for %s from %s", logContext, r.URL.Path, r.RemoteAddr)
 	return false
 }
