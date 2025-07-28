@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,6 +21,7 @@ import (
 type Proxy struct {
 	Mux      *http.ServeMux // HTTP multiplexer for routing
 	Upstream *url.URL
+	shutdown chan struct{} // Used for graceful shutdown
 }
 
 // New creates a new Proxy instance with all required middlewares and handlers.
@@ -52,14 +54,25 @@ func New(options ...func(*Options)) (*Proxy, error) {
 	if opts.UpstreamURL == nil {
 		return nil, fmt.Errorf("upstream URL is required")
 	}
-	if opts.CookieOptions.SessionCookieName == "" {
-		return nil, fmt.Errorf("session cookie name is required")
+	// Stricter URL validation
+	if opts.UpstreamURL.Scheme != "http" && opts.UpstreamURL.Scheme != "https" {
+		return nil, fmt.Errorf("upstream URL must have http or https scheme")
 	}
-	if opts.CookieOptions.TrackingCookieName == "" {
-		return nil, fmt.Errorf("tracking cookie name is required")
+	if opts.UpstreamURL.Host == "" {
+		return nil, fmt.Errorf("upstream URL must have a host")
 	}
-	if opts.CookieOptions.AuthCookieName == "" {
-		return nil, fmt.Errorf("authentication cookie name is required")
+	// Stricter cookie name validation (RFC 6265)
+	for _, name := range []string{
+		opts.CookieOptions.SessionCookieName,
+		opts.CookieOptions.TrackingCookieName,
+		opts.CookieOptions.AuthCookieName,
+	} {
+		if name == "" {
+			return nil, fmt.Errorf("cookie names must not be empty")
+		}
+		if !isValidCookieName(name) {
+			return nil, fmt.Errorf("invalid cookie name: %q", name)
+		}
 	}
 
 	// If no session manager is provided, create a default in-memory one.
@@ -87,12 +100,8 @@ func New(options ...func(*Options)) (*Proxy, error) {
 	return &Proxy{
 		Mux:      mux,
 		Upstream: opts.UpstreamURL,
+		shutdown: make(chan struct{}),
 	}, nil
-}
-
-// ServeHTTP implements http.Handler for Proxy.
-func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p.Mux.ServeHTTP(w, r)
 }
 
 // setupAuthenticationRoutes sets up the authentication routes with the provided options.
@@ -109,6 +118,27 @@ func setupAuthenticationRoutes(mux *http.ServeMux, opts *Options) {
 		opts.EndpointPaths.Callback,
 		handlerWithMiddlewares(opts, newCallbackHandler(opts.Provider, opts.SessionStorage, opts.CookieOptions)),
 	)
+}
+
+// isValidCookieName checks if a cookie name is valid according to RFC 6265 (simplified).
+func isValidCookieName(name string) bool {
+	// Disallow control chars, space, tab, and separators: ()<>@,;:\"/[]?={}
+	for _, c := range name {
+		if c <= 0x20 || c >= 0x7f || strings.ContainsRune("()<>@,;:\\\"/[]?={} ", c) {
+			return false
+		}
+	}
+	return true
+}
+
+// Shutdown signals the proxy to gracefully shutdown. For now, it just closes the shutdown channel.
+func (p *Proxy) Shutdown() {
+	close(p.shutdown)
+}
+
+// ServeHTTP implements http.Handler for Proxy.
+func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.Mux.ServeHTTP(w, r)
 }
 
 // chainMiddlewares applies a series of middlewares to an http.Handler.
