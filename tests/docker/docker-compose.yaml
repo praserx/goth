@@ -9,28 +9,8 @@ services:
     ports:
       - "8000:8000"
     command: [] # Command is executed by the entrypoint script
-    environment:
-      # --- Goth Application Configuration ---
-      - WEB_LISTEN_HTTP=:8000
-      - WEB_COOKIE_SECURE=false # Set to true if using HTTPS
-      - WEB_COOKIE_SAME_SITE=lax
-
-      - PROXY_UPSTREAM_URL=http://resource-server:80
-      
-      - OIDC_DISCOVERY_URL=http://keycloak:8080/realms/test/.well-known/openid-configuration
-      - OIDC_CLIENT_ID=application # Must match TARGET_CLIENT_ID
-      - OIDC_CLIENT_SECRET= # This is now set by the entrypoint script
-      - OIDC_TLS_SKIP_VERIFY=true
-      - OIDC_CALLBACK_PATH=http://localhost:8000/auth/callback # Callback URL for OIDC
-      - REDIS_URL=redis:6379 # Address for the Redis service
-
-      # --- Entrypoint Script Configuration ---
-      - KEYCLOAK_URL=http://keycloak:8080 # Use the internal port for container-to-container communication
-      - KEYCLOAK_ADMIN_USER=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
-      - KEYCLOAK_REALM=test # The realm to use
-      - TARGET_CLIENT_ID=application # Client whose secret will be fetched
-      - HEALTH_CHECK_URL=http://keycloak:9000/health # Health check URL for Keycloak
+    env_file:
+      - .env # Load environment variables from .env file
     depends_on:
       - resource-server
       - keycloak
@@ -53,18 +33,33 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
-    environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
+    env_file:
+      - .env # Load environment variables from .env file
     command: ["start-dev", "--health-enabled=true", "--import-realm", "--features=scripts"]
     volumes:
-      - ./keycloak-config:/opt/keycloak/data/import # For realm import
+      - ./keycloak:/opt/keycloak/data/import # For realm import
     ports:
       - "8080:8080" # Expose Keycloak on port 9090
       - "9000:9000" # Expose the health check on port 9099
     restart: unless-stopped
     networks:
       - goth-net
+
+  keycloak-init:
+    build:
+      context: ./keycloak-init
+      dockerfile: Dockerfile
+    container_name: keycloak-init
+    working_dir: /setup
+    volumes:
+      - ./keycloak-init:/setup
+    env_file:
+      - .env
+    depends_on:
+      - keycloak
+    networks:
+      - goth-net
+    restart: "no"
 
   redis:
     image: redis:7-alpine
@@ -73,6 +68,21 @@ services:
       - "6379:6379"
     networks:
       - goth-net
+
+  token-service:
+    build:
+      context: ./token-service
+      dockerfile: Dockerfile
+    container_name: token-service
+    ports:
+      - "5000:5000" # Expose token service on port 5000
+    env_file:
+      - .env # Load environment variables from .env file
+    depends_on:
+      - keycloak
+    networks:
+      - goth-net
+    restart: unless-stopped
 
 networks:
   goth-net:
