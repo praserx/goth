@@ -29,15 +29,16 @@ func ContextMiddleware(opts session.CookieOptions) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Log the start time of the request.
-			setStartTime(r)
+			r = setStartTime(r)
 
-			// Set a unique request ID for tracing.
-			setRequestID(r)
+			// Set a unique request ID for tracing and propagate to response header.
+			r, requestID := setRequestID(r)
+			w.Header().Set(RequestIDHeader, requestID)
 
 			// Set a tracking cookie if needed.
 			setTrackingCookie(w, r, opts)
 
-			// Call the next handler in the chain.
+			// Call the next handler in the chain with the updated request.
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -55,10 +56,10 @@ func setStartTime(r *http.Request) *http.Request {
 	return r
 }
 
-// setRequestID sets a unique request ID in the context.
-func setRequestID(r *http.Request) *http.Request {
+// setRequestID sets a unique request ID in the context and returns it.
+func setRequestID(r *http.Request) (*http.Request, string) {
 	if r == nil {
-		return nil
+		return nil, ""
 	}
 
 	// Generate a unique request ID (could be a UUID or any unique identifier).
@@ -67,10 +68,7 @@ func setRequestID(r *http.Request) *http.Request {
 	// Store the generated request ID in the request context for downstream handlers.
 	r = r.WithContext(context.WithValue(r.Context(), RequestIDContextKey, requestID))
 
-	// Optionally, you can also set it as a header for visibility.
-	r.Header.Set(RequestIDHeader, requestID)
-
-	return r
+	return r, requestID
 }
 
 // setTrackingCookie sets a tracking cookie in the response writer.
