@@ -21,7 +21,7 @@ func NewTrackingCookie(value string, maxAge int, opts CookieOptions) *http.Cooki
 		MaxAge:   maxAge,
 		Secure:   opts.Secure,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	}
 }
 
@@ -34,7 +34,7 @@ func NewAuthCookie(value string, opts CookieOptions) *http.Cookie {
 		MaxAge:   int(AuthSessionTTL.Seconds()),
 		Secure:   opts.Secure,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	}
 }
 
