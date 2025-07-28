@@ -9,6 +9,8 @@ import (
 	"github.com/praserx/goth/pkg/session"
 )
 
+const trackID = "trackid"
+
 func TestSetStartTime(t *testing.T) {
 	r := httptest.NewRequest("GET", "/", nil)
 	r2 := setStartTime(r)
@@ -45,12 +47,12 @@ func TestSetRequestID(t *testing.T) {
 func TestSetTrackingCookie_New(t *testing.T) {
 	r := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	opts := session.CookieOptions{TrackingCookieName: "trackid"}
+	opts := session.CookieOptions{TrackingCookieName: trackID}
 	setTrackingCookie(w, r, opts)
 	cookies := w.Result().Cookies()
 	found := false
 	for _, c := range cookies {
-		if c.Name == "trackid" {
+		if c.Name == trackID {
 			found = true
 			if c.Value == "" {
 				t.Error("Tracking cookie value is empty")
@@ -64,9 +66,9 @@ func TestSetTrackingCookie_New(t *testing.T) {
 
 func TestSetTrackingCookie_Renew(t *testing.T) {
 	w := httptest.NewRecorder()
-	opts := session.CookieOptions{TrackingCookieName: "trackid"}
+	opts := session.CookieOptions{TrackingCookieName: trackID}
 	oldCookie := &http.Cookie{
-		Name:    "trackid",
+		Name:    trackID,
 		Value:   "oldvalue",
 		Expires: time.Now().Add(5 * time.Hour), // less than renewBefore
 	}
@@ -76,7 +78,7 @@ func TestSetTrackingCookie_Renew(t *testing.T) {
 	cookies := w.Result().Cookies()
 	found := false
 	for _, c := range cookies {
-		if c.Name == "trackid" && c.Value != "oldvalue" {
+		if c.Name == trackID && c.Value != "oldvalue" {
 			found = true
 		}
 	}
@@ -86,7 +88,7 @@ func TestSetTrackingCookie_Renew(t *testing.T) {
 }
 
 func TestContextMiddleware_Propagation(t *testing.T) {
-	opts := session.CookieOptions{TrackingCookieName: "trackid"}
+	opts := session.CookieOptions{TrackingCookieName: trackID}
 	var gotRequestID, gotStartTime bool
 	h := ContextMiddleware(opts)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Context().Value(RequestIDContextKey) != nil {
@@ -110,7 +112,7 @@ func TestContextMiddleware_Propagation(t *testing.T) {
 	}
 	found := false
 	for _, c := range w.Result().Cookies() {
-		if c.Name == "trackid" {
+		if c.Name == trackID {
 			found = true
 		}
 	}
