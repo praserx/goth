@@ -3,11 +3,12 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  style:
+  code-style:
+    name: Code Style
     strategy:
       fail-fast: false
       matrix:
-        go-version: [1.21.x, 1.22.x, 1.23.x, 1.24.x]
+        go-version: [1.22.x, 1.23.x, 1.24.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -31,11 +32,15 @@ jobs:
           fi
   
   build:
-    needs: style
+    name: Build
+    needs: code-style
+    permissions:
+      contents: read
+      actions: write
     strategy:
       fail-fast: false
       matrix:
-        go-version: [1.21.x, 1.22.x, 1.23.x, 1.24.x]
+        go-version: [1.22.x, 1.23.x, 1.24.x]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -56,13 +61,19 @@ jobs:
             ${{ runner.os }}-go-
       - name: Build
         run: go build ./...
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: goth-binaries
+          path: bin/
 
   test:
+    name: Unit Tests
     needs: build
     strategy:
       fail-fast: false
       matrix:
-        go-version: [1.21.x, 1.22.x, 1.23.x, 1.24.x]
+        go-version: [1.22.x, 1.23.x, 1.24.x]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -87,11 +98,12 @@ jobs:
         run: go test ./...
 
   lint:
+    name: Lint
     needs: test
     strategy:
       fail-fast: false
       matrix:
-        go-version: [1.21.x, 1.22.x, 1.23.x, 1.24.x]
+        go-version: [1.22.x, 1.23.x, 1.24.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
