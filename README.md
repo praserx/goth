@@ -21,7 +21,7 @@ This project is in early development. It is not production-ready, and breaking c
 
 ### Prerequisites
 
-- Go 1.18+
+- Go 1.22+
 - Docker & Docker Compose
 - `golangci-lint` (for linting)
 
@@ -56,3 +56,19 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## Project Status
 
 This project is under active development. It is not stable, not recommended for production, and APIs/configuration may change at any time. Feedback and contributions are welcome, but please expect rapid iteration and breaking changes.
+
+## GitHub Actions Workflows
+
+This repository uses two main GitHub Actions workflows:
+
+### CI Workflow
+- Runs on every pull request and push to the `main` branch.
+- Checks out code, sets up Go (1.22+), runs linters (`go vet`, `golangci-lint`), builds the code, runs all unit tests, and uploads build outputs as artifacts.
+- Caches Go dependencies for faster builds.
+
+### Release Workflow
+- Runs on every new tag push matching `*.*.*`.
+- Checks out code, builds release binaries, creates a new GitHub Release, and uploads the built binary as a downloadable release asset.
+- If a Dockerfile exists, builds and pushes a Docker image to the registry (requires secrets for registry authentication).
+
+See `.github/workflows/ci.yml` and `.github/workflows/release.yml` for details.
