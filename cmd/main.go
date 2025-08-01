@@ -15,6 +15,7 @@ import (
 
 	"github.com/praserx/goth/pkg/logger"
 	"github.com/praserx/goth/pkg/proxy"
+	"github.com/praserx/goth/pkg/version"
 )
 
 // main is the entry point for the goth proxy application.
@@ -26,6 +27,7 @@ func main() {
 		Usage:                  "A lightweight, security-focused authorization proxy",
 		Flags:                  GetAllFlags(),
 		UseShortOptionHandling: true,
+		Version:                version.Version,
 		Action:                 runGothProxy,
 	}
 
