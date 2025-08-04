@@ -1,8 +1,10 @@
 name: Release Goth Application
+
 on:
   push:
     tags:
       - '*.*.*'
+      
 jobs:
   release:
     name: Build and Release
@@ -63,7 +65,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       
       - name: Build and push Docker image
-        if: exists('docker/Dockerfile')
         uses: docker/build-push-action@v5
         with:
           context: .
