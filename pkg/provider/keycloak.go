@@ -119,10 +119,12 @@ func NewKeycloakProvider(ctx context.Context, options ...func(*Options)) (Provid
 	if opts.HttpClient == nil {
 		opts.HttpClient = &http.Client{
 			Transport: &http.Transport{
-				// Skip TLS verification if configured
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: false,
+					MinVersion:         tls.VersionTLS13,
+				},
 			},
-			Timeout: 10 * time.Second, // Set a reasonable timeout
+			Timeout: 30 * time.Second,
 		}
 	}
 

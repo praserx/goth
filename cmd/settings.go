@@ -67,8 +67,10 @@ func NewOIDCProvider(ctx context.Context, cmd *cli.Command) (provider.Provider, 
 	discoveryURL := cmd.String("oidc.discovery-url")
 	httpClient := &http.Client{
 		Transport: &http.Transport{
-			// Skip TLS verification if configured
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: cmd.Bool("oidc.tls-skip-verify")},
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cmd.Bool("oidc.tls-skip-verify"),
+				MinVersion:         tls.VersionTLS13,
+			},
 		},
 	}
 	httpClient.Timeout = 10 * time.Second // Set a reasonable timeout
