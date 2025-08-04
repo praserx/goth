@@ -1,7 +1,18 @@
 name: Check, Build and Test Goth App
-on: [push, pull_request]
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '*.*.*'
+  pull_request:
+    branches:
+      - '**'
+
 permissions:
   contents: read
+
 jobs:
   code-style:
     name: Code Style
