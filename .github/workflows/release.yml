@@ -25,7 +25,7 @@ jobs:
           HASH=${GITHUB_SHA}
           DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           GOVERSION=$(go version | awk '{print $3}')
-          go build -ldflags "-X github.com/praserx/goth/pkg/version.Version=$TAG -X github.com/praserx/goth/pkg/version.Build=$HASH -X github.com/praserx/goth/pkg/version.Commit=$HASH -X 'github.com/praserx/goth/pkg/version.Date=$DATE' -X github.com/praserx/goth/pkg/version.GoVersion=$GOVERSION" -o bin/goth ./cmd/main.go
+          go build -ldflags "-X github.com/praserx/goth/pkg/version.Version=$TAG -X github.com/praserx/goth/pkg/version.Build=$HASH -X github.com/praserx/goth/pkg/version.Commit=$HASH -X 'github.com/praserx/goth/pkg/version.Date=$DATE' -X github.com/praserx/goth/pkg/version.GoVersion=$GOVERSION" -o bin/goth ./cmd/...
       
       - name: Upload binaries as artifact
         uses: actions/upload-artifact@v4
